@@ -29,9 +29,9 @@ const connectDB = async () => {
         const opts = {
             maxPoolSize: 10,
             minPoolSize: 1,
-            serverSelectionTimeoutMS: 5000,
-            socketTimeoutMS: 30000,
-            bufferCommands: false
+            serverSelectionTimeoutMS: 8000,
+            socketTimeoutMS: 45000,
+            bufferCommands: true // Allows Mongoose to buffer model calls until connection is ready
         };
 
         console.log('🔌 Connecting to MongoDB Atlas Cloud Database...');
@@ -52,4 +52,22 @@ const connectDB = async () => {
     return cached.conn;
 };
 
+/**
+ * Express middleware to guarantee active DB connection before handling requests (crucial for Vercel serverless cold starts)
+ */
+const ensureDbConnected = async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        console.error('Database connection middleware error:', error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Database connection failed. Please verify MongoDB cluster status and environment variables.'
+        });
+    }
+};
+
 module.exports = connectDB;
+module.exports.connectDB = connectDB;
+module.exports.ensureDbConnected = ensureDbConnected;

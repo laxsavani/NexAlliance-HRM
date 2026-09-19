@@ -4,7 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
-const connectDB = require('./config/db');
+const { connectDB, ensureDbConnected } = require('./config/db');
 const errorHandler = require('./middlewares/errorHandler');
 const setupSwagger = require('./config/swagger');
 
@@ -67,6 +67,9 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0'
   });
 });
+
+// Middleware to ensure DB connection is active before executing model queries (prevents bufferCommands errors in serverless)
+app.use(ensureDbConnected);
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
