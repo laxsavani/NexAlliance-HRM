@@ -47,6 +47,17 @@ if (process.env.NODE_ENV === 'development') {
 // Serve uploaded documents and photos statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Root Welcome & Documentation pointer
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Welcome to NexAlliance HRM System Backend API',
+    documentation: '/api/docs',
+    health: '/api/health',
+    version: '1.0.0'
+  });
+});
+
 // Health Check API
 app.get('/api/health', (req, res) => {
   res.status(200).json({

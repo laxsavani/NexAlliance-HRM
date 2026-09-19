@@ -10,7 +10,7 @@ const options = {
       description: `
 ### NexAlliance Enterprise Human Resource Management (HRM) System API Documentation
 
-**Core Stack:** Node.js, Express.js, MongoDB (Mongoose)
+**Core Stack:** Node.js, Express.js, MongoDB (Mongoose), Cloudinary
 
 #### Modules Covered:
 - **Module 1: Foundation Layer** (Authentication, RBAC & Permission Matrix, Organization Masters, Employee Master with Bank & KYC/Marksheets, and System-Wide Audit Log)
@@ -19,6 +19,7 @@ const options = {
 1. **Master-Driven**: Nothing is hardcoded. Departments, Designations, Roles, Branches, and Permissions are all dynamically managed in database tables.
 2. **Access Control**: Super Admin has immediate bypass across all endpoints; CEO and CTO have identical high-level read access; Employee has self-service limited scope (OWN).
 3. **Audit Logged**: Every write operation (Create, Update, Deactivate, Upload) generates an immutable audit record.
+4. **Cloud Storage**: All documents, identity cards, and marksheets are uploaded to Cloudinary.
       `,
       contact: {
         name: 'NexAlliance IT Support',
@@ -26,6 +27,10 @@ const options = {
       }
     },
     servers: [
+      {
+        url: 'https://nexallianceitsolution.vercel.app',
+        description: 'Vercel Production Server'
+      },
       {
         url: 'http://localhost:5000',
         description: 'Local Development Server'
@@ -68,7 +73,8 @@ const options = {
                 id: { type: 'string', example: '66ebc1234567890abcdef123' },
                 employee_code: { type: 'string', example: 'NEX-0001' },
                 name: { type: 'string', example: 'Super Administrator' },
-                email: { type: 'string', example: 'admin@nexalliance.com' }
+                email: { type: 'string', example: 'admin@nexalliance.com' },
+                attendance_exempt: { type: 'boolean', example: true }
               }
             }
           }
@@ -88,18 +94,18 @@ const options = {
           type: 'object',
           properties: {
             aadhar_number: { type: 'string', example: '1234 5678 9012' },
-            aadhar_card_url: { type: 'string', example: '/uploads/documents/aadhar-sample.pdf' },
+            aadhar_card_url: { type: 'string', example: 'https://res.cloudinary.com/djn7ivlo7/image/upload/sample_aadhar.pdf' },
             pan_number: { type: 'string', example: 'ABCDE1234F' },
-            pan_card_url: { type: 'string', example: '/uploads/documents/pan-sample.pdf' }
+            pan_card_url: { type: 'string', example: 'https://res.cloudinary.com/djn7ivlo7/image/upload/sample_pan.pdf' }
           }
         },
         EducationDocuments: {
           type: 'object',
           properties: {
-            tenth_marksheet_url: { type: 'string', example: '/uploads/documents/10th-marksheet.pdf' },
-            twelfth_marksheet_url: { type: 'string', example: '/uploads/documents/12th-marksheet.pdf' },
-            diploma_marksheet_url: { type: 'string', example: '/uploads/documents/diploma-marksheet.pdf' },
-            graduation_certificate_url: { type: 'string', example: '/uploads/documents/btech-degree.pdf' }
+            tenth_marksheet_url: { type: 'string', example: 'https://res.cloudinary.com/djn7ivlo7/raw/upload/10th-marksheet.pdf' },
+            twelfth_marksheet_url: { type: 'string', example: 'https://res.cloudinary.com/djn7ivlo7/raw/upload/12th-marksheet.pdf' },
+            diploma_marksheet_url: { type: 'string', example: 'https://res.cloudinary.com/djn7ivlo7/raw/upload/diploma-marksheet.pdf' },
+            graduation_certificate_url: { type: 'string', example: 'https://res.cloudinary.com/djn7ivlo7/raw/upload/btech-degree.pdf' }
           }
         },
         EmployeeCreateRequest: {
@@ -147,7 +153,12 @@ const setupSwagger = (app) => {
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec, {
       customCss,
-      customSiteTitle: 'NexAlliance HRM - API Docs'
+      customSiteTitle: 'NexAlliance HRM - API Docs',
+      customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
+      customJs: [
+        'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.js'
+      ]
     })
   );
 
