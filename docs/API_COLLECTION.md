@@ -176,3 +176,80 @@ Authorization: Bearer <your_jwt_token>
 
 ### 5.1 Query Audit Logs (Super Admin only)
 - `GET /api/audit-logs?module=EMPLOYEE&action=CREATE&page=1&limit=20`
+
+---
+
+## 6. Module 2: Attendance Engine APIs
+
+### 6.1 Clock-In (Employee / CEO / CTO)
+- **URL:** `POST /api/attendance/clock-in`
+- **Method:** `POST`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+```json
+{
+  "lat": 21.1702,
+  "lng": 72.8311,
+  "source": "WEB",
+  "device_info": "Chrome on Windows 11"
+}
+```
+
+### 6.2 Clock-Out (Employee / CEO / CTO)
+- **URL:** `POST /api/attendance/clock-out`
+- **Method:** `POST`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+```json
+{
+  "lat": 21.1702,
+  "lng": 72.8311,
+  "source": "WEB"
+}
+```
+
+### 6.3 Get Daily Attendance Records
+- **URL:** `GET /api/attendance?from=01/09/2026&to=30/09/2026&status=Present&page=1&limit=31`
+- **Scope Enforced:** `ALL` (Super Admin/CEO/CTO), `DEPT` (Manager), `OWN` (Employee)
+
+### 6.4 Get Monthly Late Counter & LOP Deduction Summary
+- **URL:** `GET /api/attendance/late-summary?year=2026&month=9`
+- **URL (Admin querying employee):** `GET /api/attendance/late-summary?user_id=<emp_id>&year=2026&month=9`
+
+### 6.5 Export Attendance (Super Admin / CEO / CTO)
+- **URL:** `GET /api/attendance/export?from=01/09/2026&to=30/09/2026&format=csv`
+
+### 6.6 Manual Admin Edit Attendance (Super Admin only)
+- **URL:** `PUT /api/attendance/:userId/:date` (date in `DD/MM/YYYY` format)
+- **Body:**
+```json
+{
+  "status": "Present",
+  "is_late": false,
+  "remarks": "Approved Transport Delay Waiver"
+}
+```
+
+### 6.7 Trigger End-of-Day Reconciliation Job (Super Admin only)
+- **URL:** `POST /api/attendance/run-daily-job`
+- **Body:**
+```json
+{
+  "date": "19/09/2026"
+}
+```
+
+### 6.8 Shift Master CRUD (Super Admin only)
+- `GET /api/shifts`
+- `GET /api/shifts/:id`
+- `POST /api/shifts`
+- `PUT /api/shifts/:id`
+- `DELETE /api/shifts/:id`
+
+### 6.9 Holiday Calendar Master CRUD (Super Admin only)
+- `GET /api/holidays?year=2026`
+- `GET /api/holidays/:id`
+- `POST /api/holidays`
+- `PUT /api/holidays/:id`
+- `DELETE /api/holidays/:id`
+

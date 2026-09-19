@@ -17,6 +17,9 @@ const designationRoutes = require('./routes/designationRoutes');
 const branchRoutes = require('./routes/branchRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
+const shiftRoutes = require('./routes/shiftRoutes');
+const holidayRoutes = require('./routes/holidayRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
 
 const app = express();
 
@@ -80,6 +83,9 @@ app.use('/api/designations', designationRoutes);
 app.use('/api/branches', branchRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/shifts', shiftRoutes);
+app.use('/api/holidays', holidayRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 // Fallback 404 handler for undefined API routes
 app.use('*', (req, res) => {

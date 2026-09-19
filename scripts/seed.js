@@ -8,6 +8,8 @@ const RolePermission = require('../models/RolePermission');
 const Department = require('../models/Department');
 const Designation = require('../models/Designation');
 const Branch = require('../models/Branch');
+const Shift = require('../models/Shift');
+const Holiday = require('../models/Holiday');
 const User = require('../models/User');
 
 const seedDatabase = async () => {
@@ -282,7 +284,44 @@ const seedDatabase = async () => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    console.log('   ✓ Seeded Branches, Departments, and Designations.');
+    const defaultShift = await Shift.findOneAndUpdate(
+      { name: 'General Day Shift' },
+      {
+        $set: {
+          name: 'General Day Shift',
+          start_time: '10:00',
+          end_time: '18:30',
+          grace_in_min: 10,
+          monthly_late_allowed: 3,
+          late_action: 'DEDUCT',
+          late_deduct_days: 0.5,
+          half_day_hrs: 4,
+          full_day_hrs: 8,
+          status: 'Active'
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    // Seed 2026 Sample Holidays
+    const holidays2026 = [
+      { name: 'Republic Day', date: new Date(Date.UTC(2026, 0, 26)), type: 'HOLIDAY' },
+      { name: 'Holi', date: new Date(Date.UTC(2026, 2, 4)), type: 'HOLIDAY' },
+      { name: 'Independence Day', date: new Date(Date.UTC(2026, 7, 15)), type: 'HOLIDAY' },
+      { name: 'Mahatma Gandhi Jayanti', date: new Date(Date.UTC(2026, 9, 2)), type: 'HOLIDAY' },
+      { name: 'Diwali (Deepawali)', date: new Date(Date.UTC(2026, 10, 8)), type: 'HOLIDAY' },
+      { name: 'Christmas Day', date: new Date(Date.UTC(2026, 11, 25)), type: 'HOLIDAY' }
+    ];
+
+    for (const h of holidays2026) {
+      await Holiday.findOneAndUpdate(
+        { name: h.name, date: h.date },
+        { $set: { ...h, branch_id: null, status: 'Active' } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+
+    console.log('   ✓ Seeded Branches, Departments, Designations, Shifts, and Holidays.');
 
     // 5. Seed Initial Super Admin User
     console.log('5️⃣ Seeding Default Super Admin Account...');
@@ -291,28 +330,41 @@ const seedDatabase = async () => {
     const adminPassword = 'Admin@12345';
     const passwordHash = await User.hashPassword(adminPassword);
 
-    const superAdminUser = await User.findOneAndUpdate(
-      { email: adminEmail },
-      {
-        $set: {
-          employee_code: 'NEX-0001',
-          name: 'Super Administrator',
-          email: adminEmail,
-          password_hash: passwordHash,
-          role_id: superAdminRole._id,
-          department_id: defaultDept._id,
-          designation_id: defaultDesignation._id,
-          branch_id: defaultBranch._id,
-          attendance_exempt: true,
-          dob: new Date('1990-01-01'),
-          date_of_joining: new Date(),
-          salary: 150000,
-          phone: '+91 9876543210',
-          status: 'Active'
-        }
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    let superAdminUser = await User.findOne({
+      $or: [{ email: adminEmail }, { employee_code: 'NEX-0001' }]
+    });
+
+    if (!superAdminUser) {
+      superAdminUser = await User.create({
+        employee_code: 'NEX-0001',
+        name: 'Super Administrator',
+        email: adminEmail,
+        password_hash: passwordHash,
+        role_id: superAdminRole._id,
+        department_id: defaultDept._id,
+        designation_id: defaultDesignation._id,
+        branch_id: defaultBranch._id,
+        shift_id: defaultShift._id,
+        attendance_exempt: true,
+        dob: new Date('1990-01-01'),
+        date_of_joining: new Date(),
+        salary: 150000,
+        phone: '+91 9876543210',
+        status: 'Active'
+      });
+    } else {
+      superAdminUser.name = 'Super Administrator';
+      superAdminUser.email = adminEmail;
+      superAdminUser.password_hash = passwordHash;
+      superAdminUser.role_id = superAdminRole._id;
+      superAdminUser.department_id = defaultDept._id;
+      superAdminUser.designation_id = defaultDesignation._id;
+      superAdminUser.branch_id = defaultBranch._id;
+      superAdminUser.shift_id = defaultShift._id;
+      superAdminUser.attendance_exempt = true;
+      superAdminUser.status = 'Active';
+      await superAdminUser.save();
+    }
 
     console.log(`   ✓ Super Admin seeded: ${superAdminUser.email} (Employee Code: ${superAdminUser.employee_code})`);
 

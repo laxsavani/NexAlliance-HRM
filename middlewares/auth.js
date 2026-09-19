@@ -31,7 +31,8 @@ const protect = async (req, res, next) => {
       .populate('role_id', 'name code is_system is_super_admin status')
       .populate('department_id', 'name code status')
       .populate('designation_id', 'name code level status')
-      .populate('branch_id', 'name timezone status');
+      .populate('branch_id', 'name address latitude longitude radius_m timezone status')
+      .populate('shift_id');
 
     if (!user) {
       return res.status(401).json({

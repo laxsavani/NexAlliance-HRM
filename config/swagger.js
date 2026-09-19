@@ -130,6 +130,53 @@ const options = {
             identity_documents: { $ref: '#/components/schemas/IdentityDocuments' },
             education_documents: { $ref: '#/components/schemas/EducationDocuments' }
           }
+        },
+        Shift: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', example: 'General Day Shift' },
+            start_time: { type: 'string', example: '10:00' },
+            end_time: { type: 'string', example: '18:30' },
+            grace_in_min: { type: 'number', example: 10 },
+            monthly_late_allowed: { type: 'number', example: 3 },
+            late_action: { type: 'string', enum: ['DEDUCT', 'FLAG'], example: 'DEDUCT' },
+            late_deduct_days: { type: 'number', example: 0.5 },
+            half_day_hrs: { type: 'number', example: 4 },
+            full_day_hrs: { type: 'number', example: 8 },
+            status: { type: 'string', example: 'Active' }
+          }
+        },
+        Holiday: {
+          type: 'object',
+          properties: {
+            date: { type: 'string', example: '26/01/2026' },
+            name: { type: 'string', example: 'Republic Day' },
+            type: { type: 'string', enum: ['HOLIDAY', 'WEEKLY_OFF'], example: 'HOLIDAY' },
+            status: { type: 'string', example: 'Active' }
+          }
+        },
+        AttendanceDaily: {
+          type: 'object',
+          properties: {
+            date: { type: 'string', example: '19/09/2026' },
+            status: { type: 'string', example: 'Present' },
+            first_in: { type: 'string', example: '2026-09-19T04:30:00.000Z' },
+            last_out: { type: 'string', example: '2026-09-19T13:00:00.000Z' },
+            work_minutes: { type: 'number', example: 510 },
+            is_late: { type: 'boolean', example: false },
+            is_regularized: { type: 'boolean', example: false }
+          }
+        },
+        LateMonthlySummary: {
+          type: 'object',
+          properties: {
+            year: { type: 'number', example: 2026 },
+            month: { type: 'number', example: 9 },
+            late_count: { type: 'number', example: 4 },
+            allowed: { type: 'number', example: 3 },
+            extra_lates: { type: 'number', example: 1 },
+            deduction_days: { type: 'number', example: 0.5 }
+          }
         }
       }
     }
