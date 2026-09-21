@@ -340,12 +340,37 @@ const generatePayslipPDF = (payrollRun, res) => {
 };
 
 /**
- * Module 7 Forward Hook: Queues payslip release notification email
+ * Module 7 Forward Hook: Dispatches payslip release notification
  * @param {ObjectId} payrollRunId 
  */
 const queuePayslipEmail = async (payrollRunId) => {
-  // Placeholder for Module 7 (Notification Engine)
-  return true;
+  try {
+    const { sendNotification } = require('./notificationService');
+    const PayrollRun = require('../models/PayrollRun');
+
+    if (!payrollRunId) return;
+
+    const run = await PayrollRun.findById(payrollRunId)
+      .populate('user_id', 'name email employee_code')
+      .populate('cycle_id', 'name month year');
+
+    if (!run || !run.user_id) return;
+
+    const context = {
+      employee_name: run.user_id.name || 'Employee',
+      employee_code: run.user_id.employee_code || '',
+      month: run.cycle_id?.month || '',
+      year: run.cycle_id?.year || '',
+      cycle_name: run.cycle_id?.name || '',
+      net_pay: run.net_pay,
+      gross: run.gross,
+      payable_days: run.payable_days
+    };
+
+    await sendNotification(run.user_id._id, 'PAYSLIP_RELEASED', context, run._id);
+  } catch (err) {
+    console.error('[queuePayslipEmail Error]:', err.message);
+  }
 };
 
 module.exports = {

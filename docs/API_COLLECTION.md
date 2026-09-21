@@ -525,3 +525,38 @@ Authorization: Bearer <your_jwt_token>
 - `GET /api/payslips/:runId`: View summary JSON (`PAYROLL:VIEW` - OWN / ALL, gate: `Released` or `Paid`).
 - `GET /api/payslips/:runId/pdf`: Download print-ready PDF binary (`PAYROLL:VIEW` - OWN / ALL, gate: `Released` or `Paid`).
 
+---
+
+## 11. Module 7: Notifications & Communication APIs
+
+### 11.1 Notification Template Master (Super Admin only)
+- `GET /api/notification-templates`: List all notification templates (query: `channel`, `status`, `event`).
+- `POST /api/notification-templates`: Create a new template.
+```json
+{
+  "event": "CUSTOM_ANNOUNCEMENT",
+  "channel": "IN_APP",
+  "body": "Important announcement for {{employee_name}}: {{message}}",
+  "status": "Active"
+}
+```
+- `PUT /api/notification-templates/:id`: Update subject, body, status.
+```json
+{
+  "subject": "Updated Email Subject: {{employee_name}}",
+  "body": "Updated template body with {{placeholders}}",
+  "status": "Active"
+}
+```
+- `DELETE /api/notification-templates/:id`: Soft delete / deactivation.
+
+### 11.2 In-App Notifications Inbox (Self-scoped for all roles)
+- `GET /api/notifications`: Retrieve in-app notifications inbox for logged-in user (query: `is_read`, `channel`, `page`, `limit`).
+- `GET /api/notifications/unread-count`: Get unread in-app notification count (`{ "success": true, "unread_count": 3 }`).
+- `PUT /api/notifications/:id/mark-read`: Mark single notification as read.
+- `PUT /api/notifications/mark-all-read`: Mark all unread in-app notifications as read for logged-in user.
+
+### 11.3 Support & Troubleshooting Log Viewer (Super Admin only)
+- `GET /api/notifications/user/:userId`: View all dispatched notification logs (IN_APP & EMAIL) for a specific user.
+
+

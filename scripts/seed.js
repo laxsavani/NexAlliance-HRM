@@ -17,6 +17,8 @@ const SalaryComponent = require('../models/SalaryComponent');
 const EmployeeSalaryStructure = require('../models/EmployeeSalaryStructure');
 const PayrollCycle = require('../models/PayrollCycle');
 const PayrollRun = require('../models/PayrollRun');
+const NotificationTemplate = require('../models/NotificationTemplate');
+const Notification = require('../models/Notification');
 const User = require('../models/User');
 
 const seedDatabase = async () => {
@@ -525,8 +527,165 @@ const seedDatabase = async () => {
     }
     console.log('   ✓ Seeded Default Salary Components (HRA, Conveyance, Special, PF, PT).');
 
-    // 7. Seed Initial Super Admin User
-    console.log('7️⃣ Seeding Default Super Admin Account...');
+    // 7. Seed Default Notification Templates (Module 7 Master)
+    console.log('7️⃣ Seeding Default Notification Templates...');
+    const defaultNotificationTemplates = [
+      // 1. REGULARIZATION_APPROVED
+      {
+        event: 'REGULARIZATION_APPROVED',
+        channel: 'EMAIL',
+        subject: 'Attendance Regularization Approved for {{date}}',
+        body: 'Dear {{employee_name}},\n\nYour attendance regularization request for {{date}} (In: {{in_time}}, Out: {{out_time}}) has been approved by Super Admin.\n\nRegards,\nNexAlliance HR Team',
+        status: 'Active'
+      },
+      {
+        event: 'REGULARIZATION_APPROVED',
+        channel: 'IN_APP',
+        subject: null,
+        body: 'Your attendance regularization for {{date}} has been approved.',
+        status: 'Active'
+      },
+
+      // 2. REGULARIZATION_REJECTED
+      {
+        event: 'REGULARIZATION_REJECTED',
+        channel: 'EMAIL',
+        subject: 'Attendance Regularization Rejected for {{date}}',
+        body: 'Dear {{employee_name}},\n\nYour attendance regularization request for {{date}} has been rejected.\nReason: {{rejection_reason}}\n\nRegards,\nNexAlliance HR Team',
+        status: 'Active'
+      },
+      {
+        event: 'REGULARIZATION_REJECTED',
+        channel: 'IN_APP',
+        subject: null,
+        body: 'Your attendance regularization for {{date}} was rejected. Reason: {{rejection_reason}}',
+        status: 'Active'
+      },
+
+      // 3. LEAVE_APPLIED
+      {
+        event: 'LEAVE_APPLIED',
+        channel: 'EMAIL',
+        subject: 'New Leave Application: {{employee_name}} ({{leave_type}})',
+        body: 'Hello,\n\n{{employee_name}} has applied for {{days}} day(s) of {{leave_type}} from {{from_date}} to {{to_date}}.\nReason: {{reason}}\n\nPlease review the request in your approval queue.\n\nRegards,\nNexAlliance HRM',
+        status: 'Active'
+      },
+      {
+        event: 'LEAVE_APPLIED',
+        channel: 'IN_APP',
+        subject: null,
+        body: '{{employee_name}} applied for {{days}} day(s) of {{leave_type}} from {{from_date}} to {{to_date}}. Action required.',
+        status: 'Active'
+      },
+
+      // 4. LEAVE_FIRST_APPROVAL
+      {
+        event: 'LEAVE_FIRST_APPROVAL',
+        channel: 'EMAIL',
+        subject: 'Leave Request Partially Approved ({{approvals_done}}/{{approvals_needed}})',
+        body: 'Dear {{employee_name}},\n\nYour {{leave_type}} application has received 1st-level approval ({{approvals_done}} of {{approvals_needed}} approvals recorded). Awaiting final decision.\n\nRegards,\nNexAlliance HRM',
+        status: 'Active'
+      },
+      {
+        event: 'LEAVE_FIRST_APPROVAL',
+        channel: 'IN_APP',
+        subject: null,
+        body: 'Your {{leave_type}} application received 1st-level approval ({{approvals_done}}/{{approvals_needed}}).',
+        status: 'Active'
+      },
+
+      // 5. LEAVE_APPROVED
+      {
+        event: 'LEAVE_APPROVED',
+        channel: 'EMAIL',
+        subject: 'Leave Request Approved: {{leave_type}} ({{from_date}} to {{to_date}})',
+        body: 'Dear {{employee_name}},\n\nYour leave application for {{days}} day(s) of {{leave_type}} from {{from_date}} to {{to_date}} has been APPROVED.\n\nRegards,\nNexAlliance HR Team',
+        status: 'Active'
+      },
+      {
+        event: 'LEAVE_APPROVED',
+        channel: 'IN_APP',
+        subject: null,
+        body: 'Your leave application for {{days}} day(s) of {{leave_type}} from {{from_date}} to {{to_date}} is Approved.',
+        status: 'Active'
+      },
+
+      // 6. LEAVE_REJECTED
+      {
+        event: 'LEAVE_REJECTED',
+        channel: 'EMAIL',
+        subject: 'Leave Request Rejected: {{leave_type}}',
+        body: 'Dear {{employee_name}},\n\nYour leave application for {{leave_type}} has been REJECTED.\nReason: {{rejection_reason}}\n\nRegards,\nNexAlliance HR Team',
+        status: 'Active'
+      },
+      {
+        event: 'LEAVE_REJECTED',
+        channel: 'IN_APP',
+        subject: null,
+        body: 'Your {{leave_type}} application was rejected. Reason: {{rejection_reason}}',
+        status: 'Active'
+      },
+
+      // 7. LEAVE_CANCELLED_NOTICE
+      {
+        event: 'LEAVE_CANCELLED_NOTICE',
+        channel: 'EMAIL',
+        subject: 'Notice: Leave Cancelled by {{employee_name}}',
+        body: 'Hello,\n\n{{employee_name}} has cancelled their approved {{leave_type}} from {{from_date}} to {{to_date}}. Their leave balance has been restored.\n\nRegards,\nNexAlliance HRM',
+        status: 'Active'
+      },
+      {
+        event: 'LEAVE_CANCELLED_NOTICE',
+        channel: 'IN_APP',
+        subject: null,
+        body: '{{employee_name}} cancelled their approved {{leave_type}} from {{from_date}} to {{to_date}}.',
+        status: 'Active'
+      },
+
+      // 8. PAYSLIP_RELEASED
+      {
+        event: 'PAYSLIP_RELEASED',
+        channel: 'EMAIL',
+        subject: 'Payslip Released for {{month}}/{{year}}',
+        body: 'Dear {{employee_name}},\n\nYour payslip for {{month}}/{{year}} is now released and available.\nNet Pay: ₹{{net_pay}} (Gross: ₹{{gross}}, Payable Days: {{payable_days}}).\nYou may view and download your payslip PDF from the employee portal.\n\nRegards,\nNexAlliance Payroll Team',
+        status: 'Active'
+      },
+      {
+        event: 'PAYSLIP_RELEASED',
+        channel: 'IN_APP',
+        subject: null,
+        body: 'Your payslip for {{month}}/{{year}} has been released. Net Pay: ₹{{net_pay}}.',
+        status: 'Active'
+      },
+
+      // 9. LEAVE_PENDING_REMINDER
+      {
+        event: 'LEAVE_PENDING_REMINDER',
+        channel: 'EMAIL',
+        subject: 'Reminder: Pending Leave Approval for {{employee_name}}',
+        body: 'Hello,\n\nThis is a reminder that {{employee_name}}\'s leave request for {{days}} day(s) of {{leave_type}} from {{from_date}} to {{to_date}} has been pending for {{days_pending}} day(s). Please review and act on it.\n\nRegards,\nNexAlliance HRM',
+        status: 'Active'
+      },
+      {
+        event: 'LEAVE_PENDING_REMINDER',
+        channel: 'IN_APP',
+        subject: null,
+        body: 'Reminder: {{employee_name}}\'s leave request for {{days}} day(s) has been pending for {{days_pending}} day(s).',
+        status: 'Active'
+      }
+    ];
+
+    for (const nt of defaultNotificationTemplates) {
+      await NotificationTemplate.findOneAndUpdate(
+        { event: nt.event, channel: nt.channel },
+        { $set: nt },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+    console.log(`   ✓ Seeded ${defaultNotificationTemplates.length} Default Notification Templates.`);
+
+    // 8. Seed Initial Super Admin User
+    console.log('8️⃣ Seeding Default Super Admin Account...');
     const superAdminRole = rolesMap.get('SUPER_ADMIN');
     const adminEmail = 'admin@nexalliance.com';
     const adminPassword = 'Admin@12345';

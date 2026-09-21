@@ -349,6 +349,31 @@ const options = {
             status: { type: 'string', enum: ['Draft', 'Processed', 'Approved', 'Released', 'Paid'], example: 'Processed' },
             bank_advice_ref: { type: 'string', example: 'HDFC-ADV-2026-09-001' }
           }
+        },
+        NotificationTemplate: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef101' },
+            event: { type: 'string', example: 'LEAVE_APPROVED' },
+            channel: { type: 'string', enum: ['EMAIL', 'IN_APP'], example: 'IN_APP' },
+            subject: { type: 'string', example: 'Leave Request Approved: {{leave_type}}' },
+            body: { type: 'string', example: 'Your leave application for {{days}} day(s) is approved.' },
+            status: { type: 'string', enum: ['Active', 'Inactive'], example: 'Active' }
+          }
+        },
+        Notification: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef102' },
+            user_id: { type: 'string', example: '66ebc1234567890abcdef103' },
+            event: { type: 'string', example: 'LEAVE_APPROVED' },
+            channel: { type: 'string', enum: ['EMAIL', 'IN_APP'], example: 'IN_APP' },
+            title: { type: 'string', example: 'Leave Request Approved: Casual Leave' },
+            body: { type: 'string', example: 'Your leave application for 2 day(s) is approved.' },
+            is_read: { type: 'boolean', example: false },
+            delivery_status: { type: 'string', enum: ['QUEUED', 'SENT', 'FAILED', 'N/A'], example: 'N/A' },
+            ref_id: { type: 'string', example: '66ebc1234567890abcdef104' }
+          }
         }
       }
     }

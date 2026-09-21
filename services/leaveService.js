@@ -118,13 +118,70 @@ const recordLedgerTransaction = async ({ userId, leaveTypeId, txnType, qty, refI
 };
 
 /**
- * Module 7 Forward Hook: Queues notification email on leave events
+ * Module 7 Forward Hook: Dispatches notification on leave events
  * @param {Object} request - LeaveRequest document
  * @param {'SUBMITTED'|'PARTIALLY_APPROVED'|'APPROVED'|'REJECTED'|'CANCELLED'} eventType 
  */
 const queueLeaveEmail = async (request, eventType) => {
-  // Placeholder for Module 7 (Notification Engine)
-  return true;
+  try {
+    const { sendNotification } = require('./notificationService');
+    const User = require('../models/User');
+    const LeaveType = require('../models/LeaveType');
+    const { formatDate } = require('../utils/dateUtils');
+
+    if (!request) return;
+
+    const requesterId = request.user_id?._id || request.user_id;
+    let employeeName = request.user_id?.name;
+    if (!employeeName) {
+      const user = await User.findById(requesterId);
+      employeeName = user ? user.name : 'Employee';
+    }
+
+    let leaveTypeName = request.leave_type_id?.name;
+    if (!leaveTypeName) {
+      const lt = await LeaveType.findById(request.leave_type_id?._id || request.leave_type_id);
+      leaveTypeName = lt ? lt.name : 'Leave';
+    }
+
+    const approvers = request.approvers || request.assigned_approvers || [];
+    const daysCount = request.days !== undefined ? request.days : (request.total_days || 0);
+
+    const context = {
+      employee_name: employeeName,
+      leave_type: leaveTypeName,
+      from_date: request.from_date ? formatDate(request.from_date) : '',
+      to_date: request.to_date ? formatDate(request.to_date) : '',
+      days: daysCount,
+      reason: request.reason || '',
+      rejection_reason: request.rejection_reason || '',
+      approvals_done: request.approvals_done,
+      approvals_needed: request.approvals_needed
+    };
+
+    if (eventType === 'SUBMITTED') {
+      // Notify both/all resolved approvers
+      for (const approverId of approvers) {
+        await sendNotification(approverId, 'LEAVE_APPLIED', context, request._id);
+      }
+    } else if (eventType === 'PARTIALLY_APPROVED') {
+      // Notify requester that first approval is recorded
+      await sendNotification(requesterId, 'LEAVE_FIRST_APPROVAL', context, request._id);
+    } else if (eventType === 'APPROVED') {
+      // Final approval notification to requester
+      await sendNotification(requesterId, 'LEAVE_APPROVED', context, request._id);
+    } else if (eventType === 'REJECTED') {
+      // Rejection notification to requester
+      await sendNotification(requesterId, 'LEAVE_REJECTED', context, request._id);
+    } else if (eventType === 'CANCELLED') {
+      // Notify approvers of cancellation of approved leave
+      for (const approverId of approvers) {
+        await sendNotification(approverId, 'LEAVE_CANCELLED_NOTICE', context, request._id);
+      }
+    }
+  } catch (err) {
+    console.error('[queueLeaveEmail Error]:', err.message);
+  }
 };
 
 module.exports = {

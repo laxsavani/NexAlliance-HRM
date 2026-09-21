@@ -268,7 +268,10 @@ const runTests = async () => {
     // ========================================================
     // 4️⃣ Testing Payroll Cycle Creation
     // ========================================================
-    console.log('4️⃣ Testing Payroll Cycle Creation...');
+    // Clean prior cycle and runs
+    await PayrollRun.deleteMany({});
+    await PayrollCycle.deleteMany({ month: 9, year: 2026 });
+
     const cycleRes = await request('POST', '/api/payroll/cycles', {
       month: 9,
       year: 2026,

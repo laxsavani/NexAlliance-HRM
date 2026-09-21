@@ -29,6 +29,8 @@ const approvalRoutes = require('./routes/approvalRoutes');
 const salaryComponentRoutes = require('./routes/salaryComponentRoutes');
 const payrollRoutes = require('./routes/payrollRoutes');
 const payslipRoutes = require('./routes/payslipRoutes');
+const notificationTemplateRoutes = require('./routes/notificationTemplateRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
@@ -104,6 +106,8 @@ app.use('/api/approvals', approvalRoutes);
 app.use('/api/salary-components', salaryComponentRoutes);
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/payslips', payslipRoutes);
+app.use('/api/notification-templates', notificationTemplateRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Fallback 404 handler for undefined API routes
 app.use('*', (req, res) => {

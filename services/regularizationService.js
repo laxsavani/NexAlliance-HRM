@@ -43,14 +43,50 @@ const isPayrollMonthLocked = async (date) => {
 };
 
 /**
- * Module 7 Forward Hook: Queues notification email on request lifecycle events
- * (Stub until Module 7 ships)
+ * Module 7 Forward Hook: Dispatches notification on regularization lifecycle events
  * @param {Object} request - RegularizationRequest document
  * @param {'SUBMITTED'|'APPROVED'|'REJECTED'|'CANCELLED'} eventType 
  */
 const queueRegularizationEmail = async (request, eventType) => {
-  // Placeholder for Module 7 (Notification Engine)
-  return true;
+  try {
+    const { sendNotification } = require('./notificationService');
+    const User = require('../models/User');
+    const { formatDate } = require('../utils/dateUtils');
+
+    if (!request) return;
+
+    let eventCode = null;
+    if (eventType === 'APPROVED') {
+      eventCode = 'REGULARIZATION_APPROVED';
+    } else if (eventType === 'REJECTED') {
+      eventCode = 'REGULARIZATION_REJECTED';
+    }
+
+    if (!eventCode) return; // Only notify on Approved / Rejected as per doc
+
+    const userId = request.user_id?._id || request.user_id;
+    let employeeName = request.user_id?.name;
+    if (!employeeName) {
+      const user = await User.findById(userId);
+      employeeName = user ? user.name : 'Employee';
+    }
+
+    const inTimeStr = request.req_in ? new Date(request.req_in).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : (request.requested_in_time || 'N/A');
+    const outTimeStr = request.req_out ? new Date(request.req_out).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : (request.requested_out_time || 'N/A');
+
+    const context = {
+      employee_name: employeeName,
+      date: request.date ? formatDate(request.date) : '',
+      in_time: inTimeStr,
+      out_time: outTimeStr,
+      rejection_reason: request.decision_remark || request.rejection_reason || request.remarks || '',
+      reason: request.remark || request.reason || ''
+    };
+
+    await sendNotification(userId, eventCode, context, request._id);
+  } catch (err) {
+    console.error('[queueRegularizationEmail Error]:', err.message);
+  }
 };
 
 module.exports = {
