@@ -20,6 +20,8 @@ const auditLogRoutes = require('./routes/auditLogRoutes');
 const shiftRoutes = require('./routes/shiftRoutes');
 const holidayRoutes = require('./routes/holidayRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
+const regularizationReasonRoutes = require('./routes/regularizationReasonRoutes');
+const regularizationRoutes = require('./routes/regularizationRoutes');
 
 const app = express();
 
@@ -86,6 +88,8 @@ app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/holidays', holidayRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/regularization-reasons', regularizationReasonRoutes);
+app.use('/api/regularizations', regularizationRoutes);
 
 // Fallback 404 handler for undefined API routes
 app.use('*', (req, res) => {

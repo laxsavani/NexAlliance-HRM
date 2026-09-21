@@ -10,6 +10,7 @@ const Designation = require('../models/Designation');
 const Branch = require('../models/Branch');
 const Shift = require('../models/Shift');
 const Holiday = require('../models/Holiday');
+const RegularizationReason = require('../models/RegularizationReason');
 const User = require('../models/User');
 
 const seedDatabase = async () => {
@@ -321,7 +322,24 @@ const seedDatabase = async () => {
       );
     }
 
-    console.log('   ✓ Seeded Branches, Departments, Designations, Shifts, and Holidays.');
+    // Seed Default Regularization Reasons (Module 3 Master)
+    const defaultReasons = [
+      'Forgot to Clock In / Out',
+      'On-duty / Client Site Visit',
+      'Biometric / Device Technical Issue',
+      'Traffic / Public Transport Delay',
+      'Emergency Family Obligation'
+    ];
+
+    for (const rText of defaultReasons) {
+      await RegularizationReason.findOneAndUpdate(
+        { reason: rText },
+        { $set: { reason: rText, status: 'Active' } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+
+    console.log('   ✓ Seeded Branches, Departments, Designations, Shifts, Holidays, and Regularization Reasons.');
 
     // 5. Seed Initial Super Admin User
     console.log('5️⃣ Seeding Default Super Admin Account...');

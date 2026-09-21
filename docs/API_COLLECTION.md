@@ -253,3 +253,61 @@ Authorization: Bearer <your_jwt_token>
 - `PUT /api/holidays/:id`
 - `DELETE /api/holidays/:id`
 
+---
+
+## 7. Module 3: Regularization APIs
+
+### 7.1 Regularization Reasons (Master)
+- `GET /api/regularization-reasons` (All authenticated users)
+- `GET /api/regularization-reasons/:id`
+- `POST /api/regularization-reasons` (Super Admin only)
+- `PUT /api/regularization-reasons/:id` (Super Admin only)
+- `DELETE /api/regularization-reasons/:id` (Super Admin only)
+
+### 7.2 Apply for Regularization (Employee / CEO / CTO)
+- **URL:** `POST /api/regularizations`
+- **Method:** `POST`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+```json
+{
+  "date": "15/09/2026",
+  "req_in": "2026-09-15T04:30:00.000Z",
+  "req_out": "2026-09-15T13:00:00.000Z",
+  "reason_id": "66ebc1234567890abcdef123",
+  "remark": "Biometric device offline"
+}
+```
+
+### 7.3 List Regularization Requests
+- **URL:** `GET /api/regularizations?status=Pending&from=01/09/2026&to=30/09/2026&page=1&limit=20`
+- **Scope Enforced:** `ALL` (Super Admin, CEO, CTO), `OWN` (Employee)
+
+### 7.4 Get Regularization Request Details (with Attendance Context)
+- **URL:** `GET /api/regularizations/:id`
+
+### 7.5 Approve Regularization Request (Super Admin ONLY)
+- **URL:** `PUT /api/regularizations/:id/approve`
+- **Method:** `PUT`
+- **Body (Optional):**
+```json
+{
+  "decision_remark": "Approved after verification"
+}
+```
+
+### 7.6 Reject Regularization Request (Super Admin ONLY)
+- **URL:** `PUT /api/regularizations/:id/reject`
+- **Method:** `PUT`
+- **Body (Mandatory):**
+```json
+{
+  "decision_remark": "Attendance punch records show unapproved absence"
+}
+```
+
+### 7.7 Cancel Regularization Request (Requester ONLY, Pending ONLY)
+- **URL:** `PUT /api/regularizations/:id/cancel`
+- **Method:** `PUT`
+
+

@@ -177,6 +177,30 @@ const options = {
             extra_lates: { type: 'number', example: 1 },
             deduction_days: { type: 'number', example: 0.5 }
           }
+        },
+        RegularizationReason: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef123' },
+            reason: { type: 'string', example: 'Biometric / Device Issue' },
+            status: { type: 'string', enum: ['Active', 'Inactive'], example: 'Active' }
+          }
+        },
+        RegularizationRequest: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef456' },
+            user_id: { type: 'string', example: '66ebc1234567890abcdef789' },
+            date: { type: 'string', example: '15/09/2026' },
+            req_in: { type: 'string', format: 'date-time', example: '2026-09-15T04:30:00.000Z' },
+            req_out: { type: 'string', format: 'date-time', example: '2026-09-15T13:00:00.000Z' },
+            reason_id: { type: 'string', example: '66ebc1234567890abcdef123' },
+            remark: { type: 'string', example: 'Biometric fingerprint reader was offline' },
+            status: { type: 'string', enum: ['Pending', 'Approved', 'Rejected', 'Cancelled'], example: 'Pending' },
+            decided_by: { type: 'string', example: '66ebc1234567890abcdef001' },
+            decision_remark: { type: 'string', example: 'Verified with IT helpdesk log' },
+            decided_at: { type: 'string', format: 'date-time' }
+          }
         }
       }
     }
