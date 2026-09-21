@@ -261,6 +261,29 @@ const options = {
             qty: { type: 'number', example: -1 },
             remarks: { type: 'string' }
           }
+        },
+        ApprovalMatrix: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef999' },
+            requester_type: { type: 'string', enum: ['USER', 'DEPARTMENT', 'ROLE'], example: 'DEPARTMENT' },
+            requester_ref: { type: 'string', example: '66ebc1234567890abcdef102' },
+            module: { type: 'string', enum: ['LEAVE', 'REGULARIZATION'], example: 'LEAVE' },
+            level_no: { type: 'integer', example: 1 },
+            approvers: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  approver_type: { type: 'string', enum: ['USER', 'ROLE'], example: 'ROLE' },
+                  approver_ref: { type: 'string', example: '66ebc1234567890abcdef101' }
+                }
+              }
+            },
+            rule: { type: 'string', enum: ['ALL', 'ANY'], example: 'ALL' },
+            is_active: { type: 'boolean', example: true },
+            is_locked: { type: 'boolean', example: false }
+          }
         }
       }
     }

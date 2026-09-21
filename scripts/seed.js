@@ -12,6 +12,7 @@ const Shift = require('../models/Shift');
 const Holiday = require('../models/Holiday');
 const RegularizationReason = require('../models/RegularizationReason');
 const LeaveType = require('../models/LeaveType');
+const ApprovalMatrix = require('../models/ApprovalMatrix');
 const User = require('../models/User');
 
 const seedDatabase = async () => {
@@ -82,6 +83,12 @@ const seedDatabase = async () => {
       { module: 'LEAVE', action: 'APPROVE', description: 'Approve leave request' },
       { module: 'LEAVE', action: 'REJECT', description: 'Reject leave request' },
 
+      // Approval Matrix (Module 5)
+      { module: 'APPROVAL_MATRIX', action: 'VIEW', description: 'View approval matrix configurations' },
+      { module: 'APPROVAL_MATRIX', action: 'CREATE', description: 'Create approval matrix mapping' },
+      { module: 'APPROVAL_MATRIX', action: 'EDIT', description: 'Edit approval matrix mapping' },
+      { module: 'APPROVAL_MATRIX', action: 'DELETE', description: 'Deactivate approval matrix mapping' },
+
       // Payroll
       { module: 'PAYROLL', action: 'VIEW', description: 'View payslips / payroll summary' },
       { module: 'PAYROLL', action: 'PROCESS', description: 'Process monthly payroll' },
@@ -137,6 +144,10 @@ const seedDatabase = async () => {
       'LEAVE:VIEW': { allowed: true, scope: 'ALL' },
       'LEAVE:APPROVE': { allowed: true, scope: 'MATRIX' },
       'LEAVE:REJECT': { allowed: true, scope: 'MATRIX' },
+      'APPROVAL_MATRIX:VIEW': { allowed: true, scope: 'ALL' },
+      'APPROVAL_MATRIX:CREATE': { allowed: false, scope: 'NO' },
+      'APPROVAL_MATRIX:EDIT': { allowed: false, scope: 'NO' },
+      'APPROVAL_MATRIX:DELETE': { allowed: false, scope: 'NO' },
       'PAYROLL:VIEW': { allowed: true, scope: 'ALL' },
       'PAYROLL:PROCESS': { allowed: false, scope: 'NO' },
       'PAYROLL:GENERATE': { allowed: false, scope: 'NO' },
@@ -175,6 +186,10 @@ const seedDatabase = async () => {
       'LEAVE:VIEW': { allowed: true, scope: 'OWN' },
       'LEAVE:APPROVE': { allowed: false, scope: 'NO' },
       'LEAVE:REJECT': { allowed: false, scope: 'NO' },
+      'APPROVAL_MATRIX:VIEW': { allowed: false, scope: 'NO' },
+      'APPROVAL_MATRIX:CREATE': { allowed: false, scope: 'NO' },
+      'APPROVAL_MATRIX:EDIT': { allowed: false, scope: 'NO' },
+      'APPROVAL_MATRIX:DELETE': { allowed: false, scope: 'NO' },
       'PAYROLL:VIEW': { allowed: true, scope: 'OWN' },
       'PAYROLL:PROCESS': { allowed: false, scope: 'NO' },
       'PAYROLL:GENERATE': { allowed: false, scope: 'NO' },
@@ -396,8 +411,84 @@ const seedDatabase = async () => {
 
     console.log('   ✓ Seeded Branches, Departments, Designations, Shifts, Holidays, Reasons, and Leave Types.');
 
-    // 5. Seed Initial Super Admin User
-    console.log('5️⃣ Seeding Default Super Admin Account...');
+    // 5. Seed Default Approval Matrix Configurations (Matrix A + Locked Regularization Row)
+    console.log('5️⃣ Seeding Default Approval Matrix Mappings (Matrix A & Locked Regularization)...');
+    const empRole = rolesMap.get('EMPLOYEE');
+    const ceoRole = rolesMap.get('CEO');
+    const ctoRole = rolesMap.get('CTO');
+    const saRole = rolesMap.get('SUPER_ADMIN');
+
+    const defaultMatrixConfigs = [
+      // 1. Employee Leave -> Both CEO & CTO must approve (rule: ALL)
+      {
+        requester_type: 'ROLE',
+        requester_ref: empRole._id,
+        module: 'LEAVE',
+        level_no: 1,
+        rule: 'ALL',
+        approvers: [
+          { approver_type: 'ROLE', approver_ref: ceoRole._id },
+          { approver_type: 'ROLE', approver_ref: ctoRole._id }
+        ],
+        is_active: true,
+        is_locked: false
+      },
+      // 2. CTO Leave -> CEO single approver (rule: ALL)
+      {
+        requester_type: 'ROLE',
+        requester_ref: ctoRole._id,
+        module: 'LEAVE',
+        level_no: 1,
+        rule: 'ALL',
+        approvers: [
+          { approver_type: 'ROLE', approver_ref: ceoRole._id }
+        ],
+        is_active: true,
+        is_locked: false
+      },
+      // 3. CEO Leave -> CTO single approver (rule: ALL)
+      {
+        requester_type: 'ROLE',
+        requester_ref: ceoRole._id,
+        module: 'LEAVE',
+        level_no: 1,
+        rule: 'ALL',
+        approvers: [
+          { approver_type: 'ROLE', approver_ref: ctoRole._id }
+        ],
+        is_active: true,
+        is_locked: false
+      },
+      // 4. Regularization Role Default -> Super Admin only (is_locked: true)
+      {
+        requester_type: 'ROLE',
+        requester_ref: empRole._id,
+        module: 'REGULARIZATION',
+        level_no: 1,
+        rule: 'ALL',
+        approvers: [
+          { approver_type: 'ROLE', approver_ref: saRole._id }
+        ],
+        is_active: true,
+        is_locked: true
+      }
+    ];
+
+    for (const mCfg of defaultMatrixConfigs) {
+      await ApprovalMatrix.findOneAndUpdate(
+        {
+          requester_type: mCfg.requester_type,
+          requester_ref: mCfg.requester_ref,
+          module: mCfg.module
+        },
+        { $set: mCfg },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+    console.log('   ✓ Seeded Matrix A Role Defaults (Employee, CTO, CEO) & Locked Regularization row.');
+
+    // 6. Seed Initial Super Admin User
+    console.log('6️⃣ Seeding Default Super Admin Account...');
     const superAdminRole = rolesMap.get('SUPER_ADMIN');
     const adminEmail = 'admin@nexalliance.com';
     const adminPassword = 'Admin@12345';

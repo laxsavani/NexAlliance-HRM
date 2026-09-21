@@ -24,6 +24,8 @@ const regularizationReasonRoutes = require('./routes/regularizationReasonRoutes'
 const regularizationRoutes = require('./routes/regularizationRoutes');
 const leaveTypeRoutes = require('./routes/leaveTypeRoutes');
 const leaveRoutes = require('./routes/leaveRoutes');
+const approvalMatrixRoutes = require('./routes/approvalMatrixRoutes');
+const approvalRoutes = require('./routes/approvalRoutes');
 
 const app = express();
 
@@ -94,6 +96,8 @@ app.use('/api/regularization-reasons', regularizationReasonRoutes);
 app.use('/api/regularizations', regularizationRoutes);
 app.use('/api/leave-types', leaveTypeRoutes);
 app.use('/api/leaves', leaveRoutes);
+app.use('/api/approval-matrix', approvalMatrixRoutes);
+app.use('/api/approvals', approvalRoutes);
 
 // Fallback 404 handler for undefined API routes
 app.use('*', (req, res) => {

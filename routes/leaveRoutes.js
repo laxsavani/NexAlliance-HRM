@@ -8,7 +8,8 @@ const {
   approveLeave,
   rejectLeave,
   cancelLeave,
-  adjustBalance
+  adjustBalance,
+  overrideLeaveDecision
 } = require('../controllers/leaveController');
 const { protect, checkPermission } = require('../middlewares/auth');
 
@@ -167,6 +168,39 @@ router.route('/')
  *         description: Request not found
  */
 router.get('/:id', checkPermission('LEAVE', 'VIEW'), getLeaveById);
+
+/**
+ * @swagger
+ * /api/leaves/{id}/override-decision:
+ *   put:
+ *     summary: "Super Admin Emergency Override (Approve or Reject)"
+ *     tags: [Leave Management]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [decision, reason]
+ *             properties:
+ *               decision: { type: string, enum: ['APPROVED', 'REJECTED'] }
+ *               reason: { type: string, example: 'Emergency CEO medical absence override' }
+ *     responses:
+ *       200:
+ *         description: Leave request overridden successfully
+ *       400:
+ *         description: Missing reason, invalid status, or invalid decision
+ *       403:
+ *         description: Access Denied (Super Admin only)
+ */
+router.put('/:id/override-decision', overrideLeaveDecision);
 
 /**
  * @swagger

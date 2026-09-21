@@ -5,63 +5,15 @@ const LeaveBalance = require('../models/LeaveBalance');
 const LeaveLedger = require('../models/LeaveLedger');
 const { normalizeDate } = require('./attendanceService');
 
+const approvalMatrixService = require('./approvalMatrixService');
+
 /**
- * Resolves the approver chain snapshot based on Matrix A rules
- * - Requester is EMPLOYEE -> Approvers: [CEO, CTO], approvals_needed: 2
- * - Requester is CTO      -> Approver: [CEO], approvals_needed: 1
- * - Requester is CEO      -> Approver: [CTO], approvals_needed: 1
- * - Requester is excluded from their own approvers list
- * @param {Object} user - Populated User document
+ * Resolves the approver chain snapshot based on Approval Matrix 3-tier precedence
+ * @param {Object} user - Populated User document or user ID
  * @returns {Promise<{ approverIds: Array<ObjectId>, approvalsNeeded: number }>}
  */
 const resolveApprovers = async (user) => {
-  const roleCode = user.role_id?.code || '';
-
-  // Lookup CEO and CTO roles
-  const ceoRole = await Role.findOne({ code: 'CEO' });
-  const ctoRole = await Role.findOne({ code: 'CTO' });
-
-  // Lookup active users with CEO and CTO roles
-  const ceos = ceoRole ? await User.find({ role_id: ceoRole._id, status: 'Active' }) : [];
-  const ctos = ctoRole ? await User.find({ role_id: ctoRole._id, status: 'Active' }) : [];
-
-  const ceoUser = ceos[0];
-  const ctoUser = ctos[0];
-
-  const candidateApprovers = [];
-
-  if (roleCode === 'CTO') {
-    if (ceoUser && ceoUser._id.toString() !== user._id.toString()) {
-      candidateApprovers.push(ceoUser._id);
-    }
-    return {
-      approverIds: candidateApprovers,
-      approvalsNeeded: candidateApprovers.length > 0 ? 1 : 0
-    };
-  }
-
-  if (roleCode === 'CEO') {
-    if (ctoUser && ctoUser._id.toString() !== user._id.toString()) {
-      candidateApprovers.push(ctoUser._id);
-    }
-    return {
-      approverIds: candidateApprovers,
-      approvalsNeeded: candidateApprovers.length > 0 ? 1 : 0
-    };
-  }
-
-  // Default for Employee & all other roles: Both CEO and CTO must approve
-  if (ceoUser && ceoUser._id.toString() !== user._id.toString()) {
-    candidateApprovers.push(ceoUser._id);
-  }
-  if (ctoUser && ctoUser._id.toString() !== user._id.toString()) {
-    candidateApprovers.push(ctoUser._id);
-  }
-
-  return {
-    approverIds: candidateApprovers,
-    approvalsNeeded: candidateApprovers.length // 2 if both present
-  };
+  return await approvalMatrixService.resolveApprovers(user, 'LEAVE');
 };
 
 /**

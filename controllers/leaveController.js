@@ -823,6 +823,167 @@ const adjustBalance = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Super Admin Emergency Override Decision (Approved or Rejected with mandatory reason)
+ * @route   PUT /api/leaves/:id/override-decision
+ * @access  Private (SUPER_ADMIN only)
+ */
+const overrideLeaveDecision = async (req, res, next) => {
+  try {
+    const isSuperAdmin = req.user.role_id?.is_super_admin === true || req.user.role_id?.code === 'SUPER_ADMIN';
+    if (!isSuperAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Denied: Only Super Admin can perform an emergency override on leave requests'
+      });
+    }
+
+    const { decision, reason } = req.body;
+
+    if (!decision || !['APPROVED', 'REJECTED'].includes(decision.toUpperCase())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid decision is required: APPROVED or REJECTED'
+      });
+    }
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'A detailed reason is mandatory when executing an emergency override decision'
+      });
+    }
+
+    const leaveRequest = await LeaveRequest.findById(req.params.id)
+      .populate('leave_type_id')
+      .populate('user_id');
+
+    if (!leaveRequest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Leave request not found'
+      });
+    }
+
+    if (leaveRequest.status !== 'Pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot override request with status [${leaveRequest.status}]. Only Pending requests can be overridden.`
+      });
+    }
+
+    const oldState = leaveRequest.toObject();
+    const finalDecision = decision.toUpperCase();
+    const year = leaveRequest.from_date.getUTCFullYear();
+    const month = leaveRequest.from_date.getUTCMonth() + 1;
+    const balance = await getOrCreateLeaveBalance(leaveRequest.user_id._id, leaveRequest.leave_type_id, year, month);
+
+    if (finalDecision === 'APPROVED') {
+      leaveRequest.status = 'Approved';
+      leaveRequest.is_override = true;
+      leaveRequest.approvals.push({
+        approver_id: req.user._id,
+        action: 'APPROVE',
+        remark: `[SUPER_ADMIN_OVERRIDE] ${reason.trim()}`,
+        acted_at: new Date()
+      });
+      leaveRequest.approvals_done = leaveRequest.approvals_needed;
+
+      // 1. Balance deduction: move from pending to used
+      balance.pending = Math.max(0, balance.pending - leaveRequest.days);
+      balance.used += leaveRequest.days;
+      await balance.save();
+
+      // 2. Append to LeaveLedger
+      await recordLedgerTransaction({
+        userId: leaveRequest.user_id._id,
+        leaveTypeId: leaveRequest.leave_type_id._id,
+        txnType: 'USED',
+        qty: -leaveRequest.days,
+        refId: leaveRequest._id,
+        createdBy: req.user._id,
+        remarks: `Leave approved via Super Admin override: ${reason.trim()}`
+      });
+
+      // 3. Attendance integration
+      if (leaveRequest.day_part === 'SHORT') {
+        const { markShortLeaveCover } = require('../services/attendanceService');
+        await markShortLeaveCover(
+          leaveRequest.user_id._id,
+          leaveRequest.from_date,
+          leaveRequest.from_time,
+          leaveRequest.to_time
+        );
+      } else {
+        let cur = new Date(leaveRequest.from_date.getTime());
+        const end = new Date(leaveRequest.to_date.getTime());
+        while (cur.getTime() <= end.getTime()) {
+          const normDate = normalizeDate(cur);
+          await AttendanceDaily.findOneAndUpdate(
+            { user_id: leaveRequest.user_id._id, date: normDate },
+            {
+              $set: {
+                status: 'Leave',
+                remarks: `Approved Leave via Super Admin Override (${leaveRequest.leave_type_id.name})`
+              }
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
+          cur.setUTCDate(cur.getUTCDate() + 1);
+        }
+      }
+
+      await queueLeaveEmail(leaveRequest, 'APPROVED');
+    } else {
+      // finalDecision === 'REJECTED'
+      leaveRequest.status = 'Rejected';
+      leaveRequest.is_override = true;
+      leaveRequest.approvals.push({
+        approver_id: req.user._id,
+        action: 'REJECT',
+        remark: `[SUPER_ADMIN_OVERRIDE] ${reason.trim()}`,
+        acted_at: new Date()
+      });
+
+      // Release pending hold
+      balance.pending = Math.max(0, balance.pending - leaveRequest.days);
+      await balance.save();
+
+      // Append to LeaveLedger
+      await recordLedgerTransaction({
+        userId: leaveRequest.user_id._id,
+        leaveTypeId: leaveRequest.leave_type_id._id,
+        txnType: 'REJECTED_RELEASE',
+        qty: leaveRequest.days,
+        refId: leaveRequest._id,
+        createdBy: req.user._id,
+        remarks: `Leave rejected via Super Admin override: ${reason.trim()}`
+      });
+
+      await queueLeaveEmail(leaveRequest, 'REJECTED');
+    }
+
+    await leaveRequest.save();
+
+    await AuditLog.record(
+      req.user._id,
+      'LEAVE',
+      'OVERRIDE_LEAVE_DECISION',
+      oldState,
+      { leaveRequest, override_reason: reason.trim() },
+      req
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Leave request successfully overridden to [${leaveRequest.status}]`,
+      data: leaveRequest
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   applyLeave,
   getLeaves,
@@ -831,5 +992,6 @@ module.exports = {
   approveLeave,
   rejectLeave,
   cancelLeave,
-  adjustBalance
+  adjustBalance,
+  overrideLeaveDecision
 };

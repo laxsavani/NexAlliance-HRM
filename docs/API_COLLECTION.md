@@ -398,5 +398,54 @@ Authorization: Bearer <your_jwt_token>
 }
 ```
 
+### 8.10 Super Admin Emergency Override (Leave Decision)
+- **URL:** `PUT /api/leaves/:id/override-decision`
+- **Method:** `PUT`
+- **Access:** `SUPER_ADMIN` ONLY
+- **Body (Mandatory):**
+```json
+{
+  "decision": "APPROVED",
+  "reason": "Executive emergency absence override"
+}
+```
 
+---
 
+## 9. Module 5: Approval & Reporting Matrix APIs
+
+### 9.1 View Approval Matrix Mappings
+- **URL:** `GET /api/approval-matrix?module=LEAVE`
+- **Access:** `SUPER_ADMIN`, `CEO`, `CTO` (`ALL` view). `EMPLOYEE` $\rightarrow$ `403 Forbidden`.
+
+### 9.2 Create Approval Matrix Mapping (Super Admin only)
+- **URL:** `POST /api/approval-matrix`
+- **Method:** `POST`
+- **Body:**
+```json
+{
+  "requester_type": "DEPARTMENT",
+  "requester_ref": "66ebc1234567890abcdef102",
+  "module": "LEAVE",
+  "level_no": 1,
+  "rule": "ALL",
+  "approvers": [
+    { "approver_type": "USER", "approver_ref": "66ebc1234567890abcdef103" }
+  ]
+}
+```
+*Note: `module: 'REGULARIZATION'` is blocked with `400 Bad Request`.*
+
+### 9.3 Update Approval Matrix Mapping (Super Admin only)
+- **URL:** `PUT /api/approval-matrix/:id`
+- **Method:** `PUT`
+- *Note: `is_locked: true` rows are protected with `400 Bad Request`.*
+
+### 9.4 Soft Deactivate Approval Matrix Mapping (Super Admin only)
+- **URL:** `DELETE /api/approval-matrix/:id`
+- **Method:** `DELETE`
+
+### 9.5 Get My Pending Approvals Queue
+- **URL:** `GET /api/approvals/pending-for-me`
+- **Access:** Any authenticated user
+- **Description:** Returns pending leave requests specifically assigned to the logged-in approver.
