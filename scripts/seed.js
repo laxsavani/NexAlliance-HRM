@@ -11,6 +11,7 @@ const Branch = require('../models/Branch');
 const Shift = require('../models/Shift');
 const Holiday = require('../models/Holiday');
 const RegularizationReason = require('../models/RegularizationReason');
+const LeaveType = require('../models/LeaveType');
 const User = require('../models/User');
 
 const seedDatabase = async () => {
@@ -339,7 +340,61 @@ const seedDatabase = async () => {
       );
     }
 
-    console.log('   ✓ Seeded Branches, Departments, Designations, Shifts, Holidays, and Regularization Reasons.');
+    // Seed Default Leave Types (Module 4 Master)
+    const defaultLeaveTypes = [
+      {
+        code: 'SHORT_LEAVE',
+        name: 'Short Leave',
+        is_paid: true,
+        quota: 2,
+        quota_period: 'MONTH',
+        carry_forward: false,
+        deduct_salary: false,
+        max_duration_minutes: 120,
+        half_day_allowed: false,
+        needs_attachment: false,
+        notice_days: 0,
+        status: 'Active'
+      },
+      {
+        code: 'LWP',
+        name: 'Unpaid Leave (LWP)',
+        is_paid: false,
+        quota: 0, // No cap
+        quota_period: 'YEAR',
+        carry_forward: false,
+        deduct_salary: true,
+        max_duration_minutes: null,
+        half_day_allowed: true,
+        needs_attachment: false,
+        notice_days: 0,
+        status: 'Active'
+      },
+      {
+        code: 'CL',
+        name: 'Casual Leave',
+        is_paid: true,
+        quota: 12,
+        quota_period: 'YEAR',
+        carry_forward: false,
+        deduct_salary: false,
+        max_duration_minutes: null,
+        half_day_allowed: true,
+        needs_attachment: false,
+        notice_days: 1,
+        status: 'Active'
+      }
+    ];
+
+    for (const lt of defaultLeaveTypes) {
+      await LeaveType.findOneAndUpdate(
+        { code: lt.code },
+        { $set: lt },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+
+    console.log('   ✓ Seeded Branches, Departments, Designations, Shifts, Holidays, Reasons, and Leave Types.');
 
     // 5. Seed Initial Super Admin User
     console.log('5️⃣ Seeding Default Super Admin Account...');

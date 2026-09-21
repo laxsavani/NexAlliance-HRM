@@ -310,4 +310,93 @@ Authorization: Bearer <your_jwt_token>
 - **URL:** `PUT /api/regularizations/:id/cancel`
 - **Method:** `PUT`
 
+---
+
+## 8. Module 4: Leave Management APIs
+
+### 8.1 Leave Types Master
+- `GET /api/leave-types` (All authenticated users)
+- `GET /api/leave-types/:id`
+- `POST /api/leave-types` (Super Admin only)
+- `PUT /api/leave-types/:id` (Super Admin only)
+- `DELETE /api/leave-types/:id` (Super Admin only)
+
+### 8.2 Get Leave Balances
+- **URL:** `GET /api/leaves/balance?year=2026&month=9`
+- **Scope Enforced:** `ALL` (Super Admin/CEO/CTO), `OWN` (Employee)
+
+### 8.3 Apply for Leave (Employee / CEO / CTO)
+- **URL:** `POST /api/leaves`
+- **Method:** `POST`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body (Full Day):**
+```json
+{
+  "leave_type_id": "66ebc1234567890abcdef101",
+  "from_date": "25/09/2026",
+  "to_date": "26/09/2026",
+  "day_part": "FULL",
+  "reason": "Family vacation"
+}
+```
+- **Body (Short Leave - Max 2 hours / 2 per month):**
+```json
+{
+  "leave_type_id": "66ebc1234567890abcdef102",
+  "from_date": "24/09/2026",
+  "to_date": "24/09/2026",
+  "day_part": "SHORT",
+  "from_time": "10:00",
+  "to_time": "11:30",
+  "reason": "Morning dental checkup"
+}
+```
+
+### 8.4 List Leave Requests
+- **URL:** `GET /api/leaves?status=Pending&page=1&limit=20`
+- **Scope Enforced:** `ALL` (Super Admin/CEO/CTO), `OWN` (Employee)
+
+### 8.5 Get Leave Request Details
+- **URL:** `GET /api/leaves/:id`
+
+### 8.6 Approve Leave Request (Dual CEO+CTO Approvers & Super Admin Override)
+- **URL:** `PUT /api/leaves/:id/approve`
+- **Method:** `PUT`
+- **Body (Optional):**
+```json
+{
+  "remark": "Approved"
+}
+```
+
+### 8.7 Reject Leave Request (Immediate circuit breaker on single reject)
+- **URL:** `PUT /api/leaves/:id/reject`
+- **Method:** `PUT`
+- **Body (Mandatory):**
+```json
+{
+  "decision_remark": "Critical release scheduled on these dates"
+}
+```
+
+### 8.8 Cancel Leave Request
+- **URL:** `PUT /api/leaves/:id/cancel`
+- **Method:** `PUT`
+- **Access:** Requester (Pending or future Approved), Super Admin (Past Approved)
+
+### 8.9 Manual Balance Adjustment (Super Admin only)
+- **URL:** `POST /api/leaves/adjust-balance`
+- **Method:** `POST`
+- **Body:**
+```json
+{
+  "user_id": "66ebc1234567890abcdef789",
+  "leave_type_id": "66ebc1234567890abcdef101",
+  "year": 2026,
+  "qty": 2,
+  "reason": "Compensatory off for weekend server maintenance"
+}
+```
+
+
 

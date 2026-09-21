@@ -201,6 +201,66 @@ const options = {
             decision_remark: { type: 'string', example: 'Verified with IT helpdesk log' },
             decided_at: { type: 'string', format: 'date-time' }
           }
+        },
+        LeaveType: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef123' },
+            code: { type: 'string', example: 'SHORT_LEAVE' },
+            name: { type: 'string', example: 'Short Leave' },
+            is_paid: { type: 'boolean', example: true },
+            quota: { type: 'number', example: 2 },
+            quota_period: { type: 'string', enum: ['MONTH', 'YEAR'], example: 'MONTH' },
+            carry_forward: { type: 'boolean', example: false },
+            deduct_salary: { type: 'boolean', example: false },
+            max_duration_minutes: { type: 'number', example: 120 },
+            half_day_allowed: { type: 'boolean', example: false },
+            status: { type: 'string', enum: ['Active', 'Inactive'], example: 'Active' }
+          }
+        },
+        LeaveBalance: {
+          type: 'object',
+          properties: {
+            user_id: { type: 'string' },
+            leave_type_id: { type: 'string' },
+            year: { type: 'number', example: 2026 },
+            month: { type: 'number', example: 9 },
+            opening: { type: 'number', example: 2 },
+            accrued: { type: 'number', example: 0 },
+            used: { type: 'number', example: 0 },
+            pending: { type: 'number', example: 1 },
+            available: { type: 'number', example: 1 }
+          }
+        },
+        LeaveRequest: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            user_id: { type: 'string' },
+            leave_type_id: { type: 'string' },
+            from_date: { type: 'string', example: '25/09/2026' },
+            to_date: { type: 'string', example: '26/09/2026' },
+            day_part: { type: 'string', enum: ['FULL', 'FIRST_HALF', 'SECOND_HALF', 'SHORT'] },
+            from_time: { type: 'string', example: '10:00' },
+            to_time: { type: 'string', example: '11:30' },
+            days: { type: 'number', example: 2 },
+            reason: { type: 'string', example: 'Family personal function' },
+            status: { type: 'string', enum: ['Pending', 'Approved', 'Rejected', 'Cancelled'] },
+            approvals_needed: { type: 'number', example: 2 },
+            approvals_done: { type: 'number', example: 1 }
+          }
+        },
+        LeaveLedger: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            user_id: { type: 'string' },
+            leave_type_id: { type: 'string' },
+            date: { type: 'string', format: 'date-time' },
+            txn_type: { type: 'string', enum: ['ACCRUAL', 'USED', 'LAPSED', 'ADJUSTED', 'RELEASED'] },
+            qty: { type: 'number', example: -1 },
+            remarks: { type: 'string' }
+          }
         }
       }
     }

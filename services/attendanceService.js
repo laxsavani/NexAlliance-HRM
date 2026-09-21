@@ -288,17 +288,54 @@ const runDailyStatusJob = async (targetDateInput = new Date()) => {
 };
 
 /**
- * Future Module 4 Leave Hook (placeholder)
+ * Module 4 Leave Hook: Checks if employee has an Approved leave on this date
+ * @param {ObjectId} userId 
+ * @param {Date} dateInput 
+ * @returns {Promise<boolean>}
  */
-const isOnApprovedLeave = async (userId, date) => {
-  return false;
+const isOnApprovedLeave = async (userId, dateInput) => {
+  try {
+    const LeaveRequest = require('../models/LeaveRequest');
+    const targetDate = normalizeDate(dateInput);
+    const exists = await LeaveRequest.exists({
+      user_id: userId,
+      status: 'Approved',
+      from_date: { $lte: targetDate },
+      to_date: { $gte: targetDate },
+      day_part: { $ne: 'SHORT' }
+    });
+    return Boolean(exists);
+  } catch (err) {
+    console.error('Error checking approved leave status:', err);
+    return false;
+  }
 };
 
 /**
- * Future Module 4 Short Leave Hook (placeholder)
+ * Module 4 Short Leave Hook: Covers late mark and creates Short Leave exception
+ * @param {ObjectId} userId 
+ * @param {Date} dateInput 
+ * @param {string} fromTime 
+ * @param {string} toTime 
  */
-const markShortLeaveCover = async (userId, date, fromTime, toTime) => {
-  return true;
+const markShortLeaveCover = async (userId, dateInput, fromTime, toTime) => {
+  try {
+    const targetDate = normalizeDate(dateInput);
+    await AttendanceDaily.findOneAndUpdate(
+      { user_id: userId, date: targetDate },
+      {
+        $set: {
+          is_late: false,
+          remarks: `Covered by Short Leave (${fromTime || ''} - ${toTime || ''})`
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    return true;
+  } catch (err) {
+    console.error('Error applying short leave cover:', err);
+    return false;
+  }
 };
 
 module.exports = {
