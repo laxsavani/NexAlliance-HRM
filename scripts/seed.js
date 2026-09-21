@@ -13,6 +13,10 @@ const Holiday = require('../models/Holiday');
 const RegularizationReason = require('../models/RegularizationReason');
 const LeaveType = require('../models/LeaveType');
 const ApprovalMatrix = require('../models/ApprovalMatrix');
+const SalaryComponent = require('../models/SalaryComponent');
+const EmployeeSalaryStructure = require('../models/EmployeeSalaryStructure');
+const PayrollCycle = require('../models/PayrollCycle');
+const PayrollRun = require('../models/PayrollRun');
 const User = require('../models/User');
 
 const seedDatabase = async () => {
@@ -89,9 +93,14 @@ const seedDatabase = async () => {
       { module: 'APPROVAL_MATRIX', action: 'EDIT', description: 'Edit approval matrix mapping' },
       { module: 'APPROVAL_MATRIX', action: 'DELETE', description: 'Deactivate approval matrix mapping' },
 
-      // Payroll
+      // Payroll (Module 6)
       { module: 'PAYROLL', action: 'VIEW', description: 'View payslips / payroll summary' },
       { module: 'PAYROLL', action: 'PROCESS', description: 'Process monthly payroll' },
+      { module: 'PAYROLL', action: 'APPROVE', description: 'Approve payroll cycle' },
+      { module: 'PAYROLL', action: 'RELEASE', description: 'Release payslips to employees' },
+      { module: 'PAYROLL', action: 'MARK_PAID', description: 'Mark payroll cycle as paid' },
+      { module: 'PAYROLL', action: 'REOPEN', description: 'Reopen locked payroll cycle' },
+      { module: 'PAYROLL', action: 'EDIT_STRUCTURE', description: 'Assign employee salary structures' },
       { module: 'PAYROLL', action: 'GENERATE', description: 'Generate payslips' },
 
       // Reports, Settings, Audit
@@ -150,6 +159,11 @@ const seedDatabase = async () => {
       'APPROVAL_MATRIX:DELETE': { allowed: false, scope: 'NO' },
       'PAYROLL:VIEW': { allowed: true, scope: 'ALL' },
       'PAYROLL:PROCESS': { allowed: false, scope: 'NO' },
+      'PAYROLL:APPROVE': { allowed: true, scope: 'ALL' },
+      'PAYROLL:RELEASE': { allowed: false, scope: 'NO' },
+      'PAYROLL:MARK_PAID': { allowed: false, scope: 'NO' },
+      'PAYROLL:REOPEN': { allowed: false, scope: 'NO' },
+      'PAYROLL:EDIT_STRUCTURE': { allowed: false, scope: 'NO' },
       'PAYROLL:GENERATE': { allowed: false, scope: 'NO' },
       'REPORTS:VIEW': { allowed: true, scope: 'ALL' },
       'REPORTS:EXPORT': { allowed: true, scope: 'ALL' },
@@ -192,6 +206,11 @@ const seedDatabase = async () => {
       'APPROVAL_MATRIX:DELETE': { allowed: false, scope: 'NO' },
       'PAYROLL:VIEW': { allowed: true, scope: 'OWN' },
       'PAYROLL:PROCESS': { allowed: false, scope: 'NO' },
+      'PAYROLL:APPROVE': { allowed: false, scope: 'NO' },
+      'PAYROLL:RELEASE': { allowed: false, scope: 'NO' },
+      'PAYROLL:MARK_PAID': { allowed: false, scope: 'NO' },
+      'PAYROLL:REOPEN': { allowed: false, scope: 'NO' },
+      'PAYROLL:EDIT_STRUCTURE': { allowed: false, scope: 'NO' },
       'PAYROLL:GENERATE': { allowed: false, scope: 'NO' },
       'REPORTS:VIEW': { allowed: false, scope: 'NO' },
       'REPORTS:EXPORT': { allowed: false, scope: 'NO' },
@@ -487,8 +506,27 @@ const seedDatabase = async () => {
     }
     console.log('   ✓ Seeded Matrix A Role Defaults (Employee, CTO, CEO) & Locked Regularization row.');
 
-    // 6. Seed Initial Super Admin User
-    console.log('6️⃣ Seeding Default Super Admin Account...');
+    // 6. Seed Default Salary Components (Module 6 Master)
+    console.log('6️⃣ Seeding Default Salary Components...');
+    const defaultSalaryComponents = [
+      { name: 'House Rent Allowance (HRA)', type: 'EARNING', calc_type: 'PERCENT_OF_BASIC', value: 40, taxable: true, status: 'Active' },
+      { name: 'Conveyance Allowance', type: 'EARNING', calc_type: 'FIXED', value: 2000, taxable: true, status: 'Active' },
+      { name: 'Special Allowance', type: 'EARNING', calc_type: 'FIXED', value: 5000, taxable: true, status: 'Active' },
+      { name: 'Provident Fund (PF)', type: 'DEDUCTION', calc_type: 'PERCENT_OF_BASIC', value: 12, taxable: false, status: 'Active' },
+      { name: 'Professional Tax (PT)', type: 'DEDUCTION', calc_type: 'FIXED', value: 200, taxable: false, status: 'Active' }
+    ];
+
+    for (const sc of defaultSalaryComponents) {
+      await SalaryComponent.findOneAndUpdate(
+        { name: sc.name },
+        { $set: sc },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+    console.log('   ✓ Seeded Default Salary Components (HRA, Conveyance, Special, PF, PT).');
+
+    // 7. Seed Initial Super Admin User
+    console.log('7️⃣ Seeding Default Super Admin Account...');
     const superAdminRole = rolesMap.get('SUPER_ADMIN');
     const adminEmail = 'admin@nexalliance.com';
     const adminPassword = 'Admin@12345';

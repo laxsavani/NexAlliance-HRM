@@ -26,6 +26,9 @@ const leaveTypeRoutes = require('./routes/leaveTypeRoutes');
 const leaveRoutes = require('./routes/leaveRoutes');
 const approvalMatrixRoutes = require('./routes/approvalMatrixRoutes');
 const approvalRoutes = require('./routes/approvalRoutes');
+const salaryComponentRoutes = require('./routes/salaryComponentRoutes');
+const payrollRoutes = require('./routes/payrollRoutes');
+const payslipRoutes = require('./routes/payslipRoutes');
 
 const app = express();
 
@@ -98,6 +101,9 @@ app.use('/api/leave-types', leaveTypeRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/approval-matrix', approvalMatrixRoutes);
 app.use('/api/approvals', approvalRoutes);
+app.use('/api/salary-components', salaryComponentRoutes);
+app.use('/api/payroll', payrollRoutes);
+app.use('/api/payslips', payslipRoutes);
 
 // Fallback 404 handler for undefined API routes
 app.use('*', (req, res) => {

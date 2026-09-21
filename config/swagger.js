@@ -284,6 +284,71 @@ const options = {
             is_active: { type: 'boolean', example: true },
             is_locked: { type: 'boolean', example: false }
           }
+        },
+        SalaryComponent: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef201' },
+            name: { type: 'string', example: 'House Rent Allowance (HRA)' },
+            type: { type: 'string', enum: ['EARNING', 'DEDUCTION'], example: 'EARNING' },
+            calc_type: { type: 'string', enum: ['FIXED', 'PERCENT_OF_BASIC', 'FORMULA'], example: 'PERCENT_OF_BASIC' },
+            value: { type: 'number', example: 40 },
+            taxable: { type: 'boolean', example: true },
+            status: { type: 'string', enum: ['Active', 'Inactive'], example: 'Active' }
+          }
+        },
+        EmployeeSalaryStructure: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef301' },
+            user_id: { type: 'string' },
+            effective_from: { type: 'string', format: 'date-time' },
+            basic: { type: 'number', example: 35000 },
+            components: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  component_id: { type: 'string' },
+                  value: { type: 'number', example: 40 }
+                }
+              }
+            },
+            status: { type: 'string', enum: ['Active', 'Inactive'], example: 'Active' }
+          }
+        },
+        PayrollCycle: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef401' },
+            month: { type: 'integer', example: 9 },
+            year: { type: 'integer', example: 2026 },
+            from_date: { type: 'string', example: '01/09/2026' },
+            to_date: { type: 'string', example: '30/09/2026' },
+            cut_off: { type: 'string', example: '25/09/2026' },
+            pay_date: { type: 'string', example: '01/10/2026' },
+            total_days: { type: 'integer', example: 30 }
+          }
+        },
+        PayrollRun: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef501' },
+            cycle_id: { type: 'string' },
+            user_id: { type: 'string' },
+            structure_id: { type: 'string' },
+            absent_days: { type: 'number', example: 1 },
+            unpaid_leave_days: { type: 'number', example: 0 },
+            late_deduction_days: { type: 'number', example: 1 },
+            lop_days: { type: 'number', example: 2 },
+            payable_days: { type: 'number', example: 24 },
+            short_leaves_used: { type: 'number', example: 1 },
+            late_marks_used: { type: 'number', example: 5 },
+            gross: { type: 'number', example: 48000 },
+            net_pay: { type: 'number', example: 46000 },
+            status: { type: 'string', enum: ['Draft', 'Processed', 'Approved', 'Released', 'Paid'], example: 'Processed' },
+            bank_advice_ref: { type: 'string', example: 'HDFC-ADV-2026-09-001' }
+          }
         }
       }
     }

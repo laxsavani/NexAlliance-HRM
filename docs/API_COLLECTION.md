@@ -449,3 +449,79 @@ Authorization: Bearer <your_jwt_token>
 - **URL:** `GET /api/approvals/pending-for-me`
 - **Access:** Any authenticated user
 - **Description:** Returns pending leave requests specifically assigned to the logged-in approver.
+
+---
+
+## 10. Module 6: Payroll Management APIs
+
+### 10.1 Salary Components Master
+- `GET /api/salary-components`: List active components (`PAYROLL:VIEW`).
+- `POST /api/salary-components`: Create salary component (`PAYROLL:EDIT_STRUCTURE` - Admin).
+```json
+{
+  "name": "House Rent Allowance (HRA)",
+  "code": "HRA",
+  "type": "EARNING",
+  "calc_type": "PERCENT_OF_BASIC",
+  "value": 40,
+  "taxable": true
+}
+```
+- `PUT /api/salary-components/:id`: Update component (`PAYROLL:EDIT_STRUCTURE` - Admin).
+- `DELETE /api/salary-components/:id`: Soft delete component (`PAYROLL:EDIT_STRUCTURE` - Admin).
+
+### 10.2 Employee Salary Structure Versioning
+- `GET /api/employees/:userId/salary-structure`: View salary structure history (`PAYROLL:VIEW` - OWN / ALL).
+- `POST /api/employees/:userId/salary-structure`: Assign new version (`PAYROLL:EDIT_STRUCTURE` - Admin).
+```json
+{
+  "effective_from": "2026-04-01",
+  "basic": 40000,
+  "components": [
+    { "component_id": "66ebc1234567890abcdef101", "value": 40 },
+    { "component_id": "66ebc1234567890abcdef102", "value": 2000 }
+  ]
+}
+```
+
+### 10.3 Payroll Cycles & Lifecycle Engine
+- `GET /api/payroll/cycles`: List all payroll cycles (`PAYROLL:VIEW`).
+- `POST /api/payroll/cycles`: Create payroll cycle (`PAYROLL:PROCESS` - Admin).
+```json
+{
+  "name": "March 2026 Payroll",
+  "month": 3,
+  "year": 2026,
+  "from_date": "2026-03-01",
+  "to_date": "2026-03-31",
+  "cut_off": "2026-03-25",
+  "pay_date": "2026-04-01",
+  "total_days": 26
+}
+```
+- `POST /api/payroll/process`: Process batch payroll for a cycle (`PAYROLL:PROCESS` - Admin).
+```json
+{
+  "cycle_id": "66ebc1234567890abcdef105"
+}
+```
+- `GET /api/payroll/:cycleId/runs`: View all employee runs for a cycle (`PAYROLL:VIEW`).
+- `POST /api/payroll/:cycleId/approve`: Approve payroll runs (`PAYROLL:APPROVE` - CEO / CTO / Admin).
+- `POST /api/payroll/:cycleId/release`: Release payslips to employees (`PAYROLL:RELEASE` - Admin).
+- `POST /api/payroll/:cycleId/mark-paid`: Disburse & mark paid with bank advice (`PAYROLL:MARK_PAID` - Admin).
+```json
+{
+  "bank_advice_ref": "NEFT-20260331-0099"
+}
+```
+- `POST /api/payroll/:cycleId/reopen`: Reopen locked month (`PAYROLL:REOPEN` - Super Admin only).
+```json
+{
+  "reason": "Late regularization adjustments approved after initial review"
+}
+```
+
+### 10.4 Payslips & PDF Generation
+- `GET /api/payslips/:runId`: View summary JSON (`PAYROLL:VIEW` - OWN / ALL, gate: `Released` or `Paid`).
+- `GET /api/payslips/:runId/pdf`: Download print-ready PDF binary (`PAYROLL:VIEW` - OWN / ALL, gate: `Released` or `Paid`).
+

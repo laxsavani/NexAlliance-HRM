@@ -33,14 +33,13 @@ const validateRegularizationWindow = (targetDate, allowedDays = 7) => {
 };
 
 /**
- * Module 6 Forward Hook: Checks if the payroll for the given month is locked
- * (Stub until Module 6 ships - currently returns false)
+ * Checks if the payroll for the given month is locked (Approved, Released, or Paid)
  * @param {Date} date 
  * @returns {Promise<boolean>}
  */
 const isPayrollMonthLocked = async (date) => {
-  // Placeholder for Module 6 (Payroll Locking)
-  return false;
+  const { isPayrollMonthLocked: checkLocked } = require('./payrollService');
+  return await checkLocked(date);
 };
 
 /**

@@ -10,6 +10,7 @@ const {
 } = require('../controllers/employeeController');
 const { protect, checkPermission } = require('../middlewares/auth');
 const { employeeDocUpload } = require('../middlewares/upload');
+const salaryStructureRoutes = require('./salaryStructureRoutes');
 
 /**
  * @swagger
@@ -19,6 +20,9 @@ const { employeeDocUpload } = require('../middlewares/upload');
  */
 
 router.use(protect);
+
+// Re-route into salary structure router
+router.use('/:userId/salary-structure', salaryStructureRoutes);
 
 /**
  * @swagger
