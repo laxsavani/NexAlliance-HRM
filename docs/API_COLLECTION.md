@@ -559,4 +559,83 @@ Authorization: Bearer <your_jwt_token>
 ### 11.3 Support & Troubleshooting Log Viewer (Super Admin only)
 - `GET /api/notifications/user/:userId`: View all dispatched notification logs (IN_APP & EMAIL) for a specific user.
 
+---
+
+## 12. Module 8: Security & System Hardening APIs
+
+### 12.1 Authentication Hardening & 2FA
+- `POST /api/auth/login`: Authenticate with rate limit (20 req/min), 5-attempt lockout (HTTP 423), and 2FA TOTP verification.
+```json
+{
+  "email": "admin@nexalliance.com",
+  "password": "Admin@12345",
+  "totp_code": "123456"
+}
+```
+- `POST /api/auth/2fa/setup`: Generate TOTP 2FA secret and OTPAuth URI (Super Admin only).
+- `POST /api/auth/2fa/verify`: Verify 6-digit TOTP code and enable 2FA (Super Admin only).
+```json
+{
+  "totp_code": "123456"
+}
+```
+- `POST /api/auth/refresh-token`: Refresh access token.
+```json
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+### 12.2 Sensitive Field Changes & Approvals
+- `PUT /api/employees/me/sensitive-field`: Submit a sensitive field update (creates Pending request).
+```json
+{
+  "field": "bank_account",
+  "new_value": "987654321098"
+}
+```
+- `GET /api/sensitive-change-requests`: List pending requests (Super Admin only, query: `?status=Pending`).
+- `PUT /api/sensitive-change-requests/:id/approve`: Approve request and commit AES-256 encrypted update (Super Admin only).
+```json
+{
+  "remark": "Verified with bank passbook"
+}
+```
+- `PUT /api/sensitive-change-requests/:id/reject`: Reject request with remark (Super Admin only).
+```json
+{
+  "remark": "Account number and IFSC do not match"
+}
+```
+
+### 12.3 Dedicated Unmask & Security Audit
+- `GET /api/employees/:id/sensitive-fields/unmask`: Decrypt plaintext Bank/PAN/Aadhaar data (Super Admin ONLY with mandatory `SENSITIVE_VIEW` AuditLog).
+- `GET /api/login-attempts`: View login attempt history (Super Admin only, query: `?user_email=&from=&to=`).
+
+---
+
+## 13. Module 9: Reports & Dashboard APIs
+
+### 13.1 Unified Role-Tailored Dashboard
+- `GET /api/dashboard`: Single endpoint delivering role-shaped dashboard metrics (Super Admin / Executive CEO & CTO / Employee).
+
+### 13.2 Attendance Reports & CSV Export (Super Admin / CEO / CTO)
+- `GET /api/reports/attendance`: Attendance summary report (query: `?from=&to=&branch_id=&department_id=&user_id=`).
+- `GET /api/reports/attendance/export`: Export attendance summary report as CSV.
+
+### 13.3 Leave Management Reports (Super Admin / CEO / CTO)
+- `GET /api/reports/leave-balance`: Leave balances across employees (query: `?year=2026&month=9&department_id=`).
+- `GET /api/reports/leave-ledger`: Full credit/debit transaction ledger (query: `?user_id=&leave_type_id=&from=&to=`).
+- `GET /api/reports/leave-utilization`: Quota vs Used utilization percentage (query: `?year=2026&department_id=`).
+- `GET /api/reports/short-leave-usage`: Monthly short leave frequency and duration (query: `?year=2026&month=9&department_id=`).
+
+### 13.4 Payroll Reports & CSV Export (Super Admin / CEO / CTO)
+- `GET /api/reports/lop`: Loss of Pay (LOP) and unpaid leave report (query: `?cycle_id=`).
+- `GET /api/reports/payroll-register`: Complete company-wide payroll register (query: `?cycle_id=`).
+- `GET /api/reports/payroll-register/export`: Downloadable payroll register CSV.
+
+### 13.5 System Audit Analytics (Super Admin ONLY)
+- `GET /api/reports/audit-summary`: System-wide audit log breakdown and recent events (query: `?module=PAYROLL&from=&to=`).
+
+
 

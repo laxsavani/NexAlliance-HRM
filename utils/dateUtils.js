@@ -49,7 +49,16 @@ const formatDate = (dateInput) => {
   return `${day}/${month}/${year}`;
 };
 
+/**
+ * Returns today's date formatted as "DD/MM/YYYY" string.
+ * @returns {string}
+ */
+const getTodayFormatted = () => {
+  return formatDate(new Date());
+};
+
 module.exports = {
   parseDate,
-  formatDate
+  formatDate,
+  getTodayFormatted
 };
