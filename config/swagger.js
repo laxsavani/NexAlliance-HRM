@@ -374,6 +374,37 @@ const options = {
             delivery_status: { type: 'string', enum: ['QUEUED', 'SENT', 'FAILED', 'N/A'], example: 'N/A' },
             ref_id: { type: 'string', example: '66ebc1234567890abcdef104' }
           }
+        },
+        SensitiveChangeRequest: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef201' },
+            user_id: { type: 'string' },
+            field: { type: 'string', enum: ['bank_account', 'pan', 'aadhaar'], example: 'bank_account' },
+            status: { type: 'string', enum: ['Pending', 'Approved', 'Rejected'], example: 'Pending' },
+            decided_by: { type: 'string' },
+            decision_remark: { type: 'string' },
+            decided_at: { type: 'string', format: 'date-time' }
+          }
+        },
+        LoginAttempt: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '66ebc1234567890abcdef301' },
+            email: { type: 'string', example: 'admin@nexalliance.com' },
+            ip: { type: 'string', example: '127.0.0.1' },
+            success: { type: 'boolean', example: true },
+            attempted_at: { type: 'string', format: 'date-time' }
+          }
+        },
+        TwoFASetupResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: '2FA secret generated successfully' },
+            secret: { type: 'string', example: 'JBSWY3DPEHPK3PXP' },
+            otpauth_url: { type: 'string', example: 'otpauth://totp/NexAllianceHRM:admin@nexalliance.com?secret=JBSWY3DPEHPK3PXP&issuer=NexAllianceHRM' }
+          }
         }
       }
     }

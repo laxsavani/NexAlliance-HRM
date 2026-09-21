@@ -6,8 +6,10 @@ const {
   createEmployee,
   updateEmployee,
   uploadEmployeeDocuments,
-  deleteEmployee
+  deleteEmployee,
+  getUnmaskedSensitiveFields
 } = require('../controllers/employeeController');
+const { submitSensitiveFieldChange } = require('../controllers/sensitiveChangeRequestController');
 const { protect, checkPermission } = require('../middlewares/auth');
 const { employeeDocUpload } = require('../middlewares/upload');
 const salaryStructureRoutes = require('./salaryStructureRoutes');
@@ -26,9 +28,35 @@ router.use('/:userId/salary-structure', salaryStructureRoutes);
 
 /**
  * @swagger
+ * /api/employees/me/sensitive-field:
+ *   put:
+ *     summary: Submit a sensitive field change request (Bank Account, PAN, Aadhaar) awaiting Super Admin approval
+ *     tags: [Employee Master]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [field, new_value]
+ *             properties:
+ *               field: { type: string, enum: [bank_account, pan, aadhaar], example: 'bank_account' }
+ *               new_value: { type: string, example: '987654321098' }
+ *     responses:
+ *       201:
+ *         description: Change request created in Pending status
+ *       400:
+ *         description: Invalid field or missing value
+ */
+router.put('/me/sensitive-field', submitSensitiveFieldChange);
+
+/**
+ * @swagger
  * /api/employees:
  *   get:
- *     summary: Get list of employees (Scope-enforced ALL / DEPT / OWN)
+ *     summary: Get list of employees (Scope-enforced ALL / DEPT / OWN, Masked bank/PAN/Aadhaar)
  *     tags: [Employee Master]
  *     security:
  *       - BearerAuth: []
@@ -69,9 +97,32 @@ router.route('/')
 
 /**
  * @swagger
+ * /api/employees/{id}/sensitive-fields/unmask:
+ *   get:
+ *     summary: Get decrypted plaintext bank/PAN/Aadhaar data (Super Admin ONLY with mandatory SENSITIVE_VIEW audit log)
+ *     tags: [Employee Master]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Unmasked sensitive data
+ *       403:
+ *         description: Access Denied (Super Admin only)
+ *       404:
+ *         description: Employee not found
+ */
+router.get('/:id/sensitive-fields/unmask', getUnmaskedSensitiveFields);
+
+/**
+ * @swagger
  * /api/employees/{id}:
  *   get:
- *     summary: Get full employee profile by ID (Scope-aware)
+ *     summary: Get full employee profile by ID (Scope-aware, Masked sensitive fields)
  *     tags: [Employee Master]
  *     security:
  *       - BearerAuth: []

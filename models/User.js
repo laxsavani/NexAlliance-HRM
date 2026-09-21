@@ -118,11 +118,76 @@ const userSchema = new mongoose.Schema({
     type: String, 
     enum: ['Active', 'Inactive'], 
     default: 'Active' 
+  },
+
+  // --- Module 8: Security & Encryption Additions ---
+  bank_account_enc: { 
+    type: String, 
+    default: null 
+  }, // AES-256-GCM ciphertext
+  pan_enc: { 
+    type: String, 
+    default: null 
+  }, // AES-256-GCM ciphertext
+  aadhaar_enc: { 
+    type: String, 
+    default: null 
+  }, // AES-256-GCM ciphertext
+  two_fa_enabled: { 
+    type: Boolean, 
+    default: false 
+  },
+  two_fa_secret_enc: { 
+    type: String, 
+    default: null 
+  }, // AES-256-GCM encrypted TOTP secret
+  failed_login_count: { 
+    type: Number, 
+    default: 0 
+  },
+  locked_until: { 
+    type: Date, 
+    default: null 
   }
 }, { 
   timestamps: true,
-  toJSON: { virtuals: true, getters: true },
-  toObject: { virtuals: true, getters: true }
+  toJSON: { 
+    virtuals: true, 
+    getters: true,
+    transform: function(doc, ret) {
+      delete ret.password_hash;
+      delete ret.two_fa_secret_enc;
+      delete ret.__v;
+      
+      // Serialization masking by default (unless unmasked explicitly by caller)
+      if (!ret._unmasked) {
+        if (ret.bank_details && ret.bank_details.account_number) {
+          const acc = String(ret.bank_details.account_number);
+          ret.bank_details.account_number = acc.length > 4 
+            ? 'X'.repeat(acc.length - 4) + acc.slice(-4) 
+            : 'XXXX' + acc;
+        }
+        if (ret.identity_documents && ret.identity_documents.pan_number) {
+          const pan = String(ret.identity_documents.pan_number);
+          ret.identity_documents.pan_number = pan.length === 10
+            ? 'XXXXX' + pan.slice(5, 9) + 'X'
+            : 'XXXXX' + pan.slice(-4);
+        }
+        if (ret.identity_documents && ret.identity_documents.aadhar_number) {
+          const aadhar = String(ret.identity_documents.aadhar_number).replace(/\s+/g, '');
+          ret.identity_documents.aadhar_number = aadhar.length > 4
+            ? 'X'.repeat(aadhar.length - 4) + aadhar.slice(-4)
+            : 'XXXXXXXX' + aadhar;
+        }
+      }
+      delete ret._unmasked;
+      return ret;
+    }
+  },
+  toObject: { 
+    virtuals: true, 
+    getters: true 
+  }
 });
 
 // Virtual field for DD/MM/YYYY formatted Date of Birth

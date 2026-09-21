@@ -481,11 +481,95 @@ const deleteEmployee = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get Plain Unmasked Sensitive Fields (Bank Account, PAN, Aadhaar)
+ *          Super Admin ONLY with Mandatory Unconditional SENSITIVE_VIEW Audit Log
+ * @route   GET /api/employees/:id/sensitive-fields/unmask
+ * @access  Private (SUPER_ADMIN only)
+ */
+const getUnmaskedSensitiveFields = async (req, res, next) => {
+  try {
+    const role = req.user.role_id;
+    const isSuperAdmin = role && (role.is_super_admin === true || role.code === 'SUPER_ADMIN');
+
+    if (!isSuperAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Denied: Super Admin permission required to view unmasked sensitive data'
+      });
+    }
+
+    const employee = await User.findById(req.params.id);
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found'
+      });
+    }
+
+    const { decrypt } = require('../utils/cryptoUtils');
+
+    // Decrypt fields if encrypted, or fallback to stored document values
+    const bankAccount = employee.bank_account_enc 
+      ? decrypt(employee.bank_account_enc) 
+      : employee.bank_details?.account_number || null;
+
+    const pan = employee.pan_enc 
+      ? decrypt(employee.pan_enc) 
+      : employee.identity_documents?.pan_number || null;
+
+    const aadhaar = employee.aadhaar_enc 
+      ? decrypt(employee.aadhaar_enc) 
+      : employee.identity_documents?.aadhar_number || null;
+
+    // Unconditional mandatory audit log entry for viewing sensitive data
+    await AuditLog.record(
+      req.user._id,
+      'EMPLOYEE',
+      'SENSITIVE_VIEW',
+      null,
+      {
+        target_employee_id: employee._id,
+        target_employee_code: employee.employee_code,
+        target_employee_name: employee.name,
+        viewed_at: new Date()
+      },
+      req
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        employee_id: employee._id,
+        employee_code: employee.employee_code,
+        name: employee.name,
+        bank_details: {
+          account_holder_name: employee.bank_details?.account_holder_name || null,
+          account_number: bankAccount,
+          bank_name: employee.bank_details?.bank_name || null,
+          ifsc_code: employee.bank_details?.ifsc_code || null,
+          branch_name: employee.bank_details?.branch_name || null,
+          upi_id: employee.bank_details?.upi_id || null
+        },
+        identity_documents: {
+          pan_number: pan,
+          aadhar_number: aadhaar,
+          pan_card_url: employee.identity_documents?.pan_card_url || null,
+          aadhar_card_url: employee.identity_documents?.aadhar_card_url || null
+        }
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getEmployees,
   getEmployeeById,
   createEmployee,
   updateEmployee,
   uploadEmployeeDocuments,
-  deleteEmployee
+  deleteEmployee,
+  getUnmaskedSensitiveFields
 };

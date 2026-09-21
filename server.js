@@ -31,6 +31,12 @@ const payrollRoutes = require('./routes/payrollRoutes');
 const payslipRoutes = require('./routes/payslipRoutes');
 const notificationTemplateRoutes = require('./routes/notificationTemplateRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const sensitiveChangeRequestRoutes = require('./routes/sensitiveChangeRequestRoutes');
+const loginAttemptRoutes = require('./routes/loginAttemptRoutes');
+
+// Middlewares for rate limiting and global audit logging
+const { generalApiRateLimiter } = require('./middlewares/rateLimiter');
+const auditWrapper = require('./middlewares/auditWrapper');
 
 const app = express();
 
@@ -45,7 +51,7 @@ app.use(helmet({
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-bypass-rate-limit']
 }));
 
 // Setup Swagger API Documentation at /api/docs
@@ -85,6 +91,12 @@ app.get('/api/health', (req, res) => {
 // Middleware to ensure DB connection is active before executing model queries (prevents bufferCommands errors in serverless)
 app.use(ensureDbConnected);
 
+// Global General API Rate Limiter
+app.use('/api', generalApiRateLimiter);
+
+// Global Audit Logging Wrapper for write operations (POST, PUT, PATCH, DELETE)
+app.use('/api', auditWrapper());
+
 // Mount Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/roles', roleRoutes);
@@ -108,6 +120,8 @@ app.use('/api/payroll', payrollRoutes);
 app.use('/api/payslips', payslipRoutes);
 app.use('/api/notification-templates', notificationTemplateRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/sensitive-change-requests', sensitiveChangeRequestRoutes);
+app.use('/api/login-attempts', loginAttemptRoutes);
 
 // Fallback 404 handler for undefined API routes
 app.use('*', (req, res) => {

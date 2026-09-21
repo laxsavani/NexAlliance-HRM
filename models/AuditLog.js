@@ -30,6 +30,10 @@ const auditLogSchema = new mongoose.Schema({
     type: String, 
     default: null 
   },
+  user_agent: {
+    type: String,
+    default: null
+  },
   performed_at: { 
     type: Date, 
     default: Date.now 
@@ -43,8 +47,11 @@ auditLogSchema.index({ module: 1, action: 1 });
 auditLogSchema.statics.record = async function(userId, module, action, oldValue, newValue, req = null) {
   try {
     let ip = null;
+    let userAgent = null;
     if (req) {
       ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip;
+      userAgent = req.headers['user-agent'] || null;
+      req._auditLogged = true; // Mark request as manually logged to prevent double-logging by global middleware
     }
     return await this.create({
       user_id: userId,
@@ -52,7 +59,8 @@ auditLogSchema.statics.record = async function(userId, module, action, oldValue,
       action,
       old_value: oldValue,
       new_value: newValue,
-      ip
+      ip,
+      user_agent: userAgent
     });
   } catch (err) {
     console.error('⚠️ AuditLog record error (non-fatal):', err.message);
